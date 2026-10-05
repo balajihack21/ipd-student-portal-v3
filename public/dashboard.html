@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/portal.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body class="portal-body">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="portal-sidebar -translate-x-full">
+        <div class="portal-brand">
+            <img src="./images/Agni Upscale.png" alt="IPD logo">
+            <div>
+                <div class="portal-brand-title">IPD Portal</div>
+                <div class="portal-brand-sub">Student</div>
+            </div>
+        </div>
+
+        <nav>
+            <div class="portal-nav-label">Workspace</div>
+            <div class="portal-nav" id="navMenu">
+                <a href="#overviewSection" class="menu-item active"><span class="nav-icon">🏠</span> Overview</a>
+                <a href="#teamSection" class="menu-item"><span class="nav-icon">👥</span> Team Members</a>
+                <a href="#uploadsSection" class="menu-item"><span class="nav-icon">⬆</span> Upload Files</a>
+                <a href="#canvasSection" class="menu-item"><span class="nav-icon">🧩</span> Canvases</a>
+                <a href="#categorySection" class="menu-item hidden"><span class="nav-icon">⚙</span> Project Category</a>
+                <a href="#historySection" class="menu-item"><span class="nav-icon">🕓</span> Upload History</a>
+                <a href="#templateSection" class="menu-item"><span class="nav-icon">📄</span> Templates</a>
+                <a href="#mentorSection" class="menu-item"><span class="nav-icon">🎓</span> Mentor</a>
+            </div>
+        </nav>
+
+        <div class="portal-sidebar-footer">
+            <div class="portal-sidebar-note">Innovation &amp; Product Development Cell</div>
+            <button id="logout" class="portal-logout">Logout</button>
+        </div>
+    </aside>
+
+    <div class="portal-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main -->
+    <div class="portal-main">
+        <header class="portal-topbar">
+            <div class="flex items-center gap-3">
+                <button class="portal-menu-btn" id="toggleSidebar" aria-label="Toggle navigation">☰</button>
+                <div>
+                    <h1>Student Dashboard</h1>
+                    <div class="portal-topbar-sub">Team profile, submissions and project canvases</div>
+                </div>
+            </div>
+
+            <div class="portal-topbar-actions">
+                <div class="portal-topbar-logos">
+                    <img src="./images/AGNI-LOGO-AUTO.png" alt="Agni College of Technology">
+                </div>
+            </div>
+        </header>
+
+        <main class="portal-content">
+
+            <!-- Overview -->
+            <section id="overviewSection" class="portal-section">
+                <div class="portal-card">
+                    <div class="portal-profile">
+                        <div class="portal-profile-main">
+                            <label for="photoInput" class="portal-avatar-wrap">
+                                <img id="profilePhoto" src="./images/christmas-celebration-concept.jpg"
+                                    alt="Profile Photo" class="portal-avatar" />
+                                <input type="file" id="photoInput" accept="image/*" class="hidden" />
+                            </label>
+
+                            <div id="profile-div-align">
+                                <h2 class="portal-profile-name">Team <span id="teamName"></span></h2>
+                                <p class="portal-profile-meta">Contact:<span id="contactNo"></span></p>
+                                <div class="portal-progress">
+                                    <div id="progressFill" style="width: 40%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="editProfileBtn" class="portal-btn portal-btn-primary">Edit Profile</button>
+                    </div>
+                </div>
+
+                <!-- Problem statement & selected idea -->
+                <div id="problemSection" class="portal-card">
+                    <div class="portal-card-head">
+                        <div>
+                            <h3 class="portal-card-title">Problem Statement &amp; Selected Idea</h3>
+                            <p class="portal-card-desc">The problem your team is solving and the idea taken forward.</p>
+                        </div>
+                        <button id="refreshProblemBtn" class="portal-btn portal-btn-ghost">Refresh</button>
+                    </div>
+                    <div id="problemDisplay">
+                        <p class="portal-empty">No problem statement added yet.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Team Members -->
+            <section id="teamSection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Team Members</h2>
+                        <p class="portal-section-desc">Everyone registered under this team.</p>
+                    </div>
+                </div>
+
+                <div id="studentCards">
+                    <!-- JS appends student cards here -->
+                </div>
+            </section>
+
+            <!-- Uploads -->
+            <section id="uploadsSection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Upload Files</h2>
+                        <p class="portal-section-desc">Submit each deliverable; the progress bar confirms the upload.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="portal-upload-group">
+                    <h3 class="portal-group-title">Semester 1</h3>
+                    <div class="portal-grid" id="uploadSection">
+                    <div class="portal-upload">
+                        <h3>Problem Statement Canvas</h3>
+                        <div class="deadline-info" id="upload_1_deadline"></div>
+                        <form id="problemForm">
+                            <input type="file" id="problemFile" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="problemProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="problemStatus"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>Affinity Diagram</h3>
+                        <div class="deadline-info" id="upload_2_deadline"></div>
+                        <form id="affinityForm">
+                            <input type="file" id="affinityFile" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="affinityProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="affinityStatus"></p>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="portal-upload-group">
+                    <h3 class="portal-group-title">Semester 2 - Design & Architecture</h3>
+                    <div class="portal-grid">
+                    <div class="portal-upload">
+                        <h3> 2D Modelling</h3>
+                        <div class="deadline-info" id="upload_10_deadline"></div>
+                        <form id="week10Form">
+                            <input type="file" id="week10File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week10Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week10Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>3D Modelling</h3>
+                        <div class="deadline-info" id="upload_11_deadline"></div>
+                        <form id="week11Form">
+                            <input type="file" id="week11File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week11Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week11Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>DB Schema</h3>
+                        <div class="deadline-info" id="upload_12_deadline"></div>
+                        <form id="week12Form">
+                            <input type="file" id="week12File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week12Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week12Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>HLD</h3>
+                        <div class="deadline-info" id="upload_13_deadline"></div>
+                        <form id="week13Form">
+                            <input type="file" id="week13File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week13Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week13Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>Tech Stack Architecture</h3>
+                        <div class="deadline-info" id="upload_14_deadline"></div>
+                        <form id="week14Form">
+                            <input type="file" id="week14File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week14Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week14Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>User Flow Diagram</h3>
+                        <div class="deadline-info" id="upload_15_deadline"></div>
+                        <form id="week15Form">
+                            <input type="file" id="week15File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week15Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week15Status"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>Mock Up / Wireframe</h3>
+                        <div class="deadline-info" id="upload_16_deadline"></div>
+                        <form id="week16Form">
+                            <input type="file" id="week16File" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="week16Progress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="week16Status"></p>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="portal-upload-group">
+                    <h3 class="portal-group-title">Additional Submissions</h3>
+                    <div class="portal-grid">
+                    <div class="portal-upload">
+                        <h3>BMC Template</h3>
+                        <div class="deadline-info" id="upload_17_deadline"></div>
+                        <form id="BMCForm">
+                            <input type="file" id="BMCFile" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="BMCProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="BMCStatus"></p>
+                    </div>
+
+                    <div class="portal-upload">
+                        <h3>Prototype Planning Canvas</h3>
+                        <div class="deadline-info" id="upload_18_deadline"></div>
+                        <form id="PPCForm">
+                            <input type="file" id="PPCFile" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="PPCProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="PPCStatus"></p>
+                    </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Canvases -->
+            <section id="canvasSection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Canvases</h2>
+                        <p class="portal-section-desc">Fill these in directly in the portal.</p>
+                    </div>
+                    <span class="portal-badge">Semester 1</span>
+                </div>
+
+                <div class="portal-grid">
+                    <div>
+                        <button id="addIdeaBtn" class="portal-action">
+                            <span class="portal-action-icon">💡</span>
+                            <span>
+                                <span class="portal-action-title">Idea Generation Canvas</span>
+                                <span class="portal-action-desc">Capture and shortlist your team's ideas</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <button id="addSwotBtn" class="portal-action">
+                            <span class="portal-action-icon">🧭</span>
+                            <span>
+                                <span class="portal-action-title">SWOT Analysis</span>
+                                <span class="portal-action-desc">Strengths, weaknesses, opportunities, threats</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <button id="addValueBtn" class="portal-action">
+                            <span class="portal-action-icon">🎯</span>
+                            <span>
+                                <span class="portal-action-title">Value Proposition</span>
+                                <span class="portal-action-desc">Who you serve and the value you deliver</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <button id="addProblemBtn" class="portal-action">
+                            <span class="portal-action-icon">📌</span>
+                            <span>
+                                <span class="portal-action-title">Problem Statement &amp; Selected Idea</span>
+                                <span class="portal-action-desc">Record the problem and the chosen idea</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Project category -->
+            <section id="categorySection" class="portal-section hidden">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Project Category</h2>
+                        <p class="portal-section-desc">Pick a category to unlock the deliverables it requires.</p>
+                    </div>
+                    <span class="portal-badge">Semester 2</span>
+                </div>
+
+                <div class="portal-card">
+                    <div class="portal-field">
+                        <label for="projectType" class="portal-label">Project type</label>
+                        <select id="projectType">
+                            <option value="">Select Project Type</option>
+                            <option value="hardware">Hardware</option>
+                            <option value="software">Software</option>
+                            <option value="hybrid">Hardware-Software</option>
+                        </select>
+                    </div>
+
+                    <div id="categoryUploadSection" class="hidden">
+                        <hr class="portal-divider">
+
+                        <div class="portal-grid">
+                            <button id="addUserReqBtn" class="portal-action">
+                                <span class="portal-action-icon">📋</span>
+                                <span>
+                                    <span class="portal-action-title">User Requirements &amp; MOSCOW</span>
+                                    <span class="portal-action-desc">Required for every project type</span>
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- Hardware -->
+                        <div id="hardwareSection" class="hidden">
+                            <hr class="portal-divider">
+                            <h3 class="portal-card-title mb-3">Hardware deliverables</h3>
+
+                            <div class="portal-grid">
+                                <button id="addDimensionsBtn" class="portal-action">
+                                    <span class="portal-action-icon">📐</span>
+                                    <span>
+                                        <span class="portal-action-title">Product Dimensions</span>
+                                        <span class="portal-action-desc">Physical specification of the product</span>
+                                    </span>
+                                </button>
+
+                                <button id="addPerformanceBtn" class="portal-action">
+                                    <span class="portal-action-icon">⚡</span>
+                                    <span>
+                                        <span class="portal-action-title">Performance Requirements</span>
+                                        <span class="portal-action-desc">Targets the product must meet</span>
+                                    </span>
+                                </button>
+
+                                <button id="addBomBtn" class="portal-action">
+                                    <span class="portal-action-icon">🧾</span>
+                                    <span>
+                                        <span class="portal-action-title">Bill Of Materials</span>
+                                        <span class="portal-action-desc">Components, quantities and cost</span>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div class="portal-grid mt-4">
+                                <div class="portal-upload">
+                                    <h3>2D Modelling</h3>
+                                    <form id="modelling2dForm">
+                                        <input type="file" id="modelling2dFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="modelling2dProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%
+                                        </div>
+                                    </div>
+                                    <p id="modelling2dStatus"></p>
+                                </div>
+
+                                <div class="portal-upload">
+                                    <h3>3D Modelling</h3>
+                                    <form id="modelling3dForm">
+                                        <input type="file" id="modelling3dFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="modelling3dProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%
+                                        </div>
+                                    </div>
+                                    <p id="modelling3dStatus"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Software -->
+                        <div id="softwareSection" class="hidden">
+                            <hr class="portal-divider">
+                            <h3 class="portal-card-title mb-3">Software deliverables</h3>
+
+                            <div class="portal-grid">
+                                <div class="portal-upload">
+                                    <h3>DB Schema</h3>
+                                    <form id="dbSchemaForm">
+                                        <input type="file" id="dbSchemaFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="dbSchemaProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%
+                                        </div>
+                                    </div>
+                                    <p id="dbSchemaStatus"></p>
+                                </div>
+
+                                <div class="portal-upload">
+                                    <h3>HLD Design</h3>
+                                    <form id="hldForm">
+                                        <input type="file" id="hldFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="hldProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                                    </div>
+                                    <p id="hldStatus"></p>
+                                </div>
+
+                                <div class="portal-upload">
+                                    <h3>Tech Stack Architecture</h3>
+                                    <form id="techStackForm">
+                                        <input type="file" id="techStackFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="techStackProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%
+                                        </div>
+                                    </div>
+                                    <p id="techStackStatus"></p>
+                                </div>
+
+                                <div class="portal-upload">
+                                    <h3>User Flow Diagram</h3>
+                                    <form id="userFlowForm">
+                                        <input type="file" id="userFlowFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="userFlowProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%
+                                        </div>
+                                    </div>
+                                    <p id="userFlowStatus"></p>
+                                </div>
+
+                                <div class="portal-upload">
+                                    <h3>Wireframe / Mockup</h3>
+                                    <form id="mockupForm">
+                                        <input type="file" id="mockupFile" required />
+                                        <button type="submit"
+                                            class="portal-btn portal-btn-primary portal-btn-block">Upload</button>
+                                    </form>
+                                    <div class="progress-bar-container">
+                                        <div id="mockupProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                                    </div>
+                                    <p id="mockupStatus"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="userReqDisplay" class="mt-4"></div>
+                        <div id="bomDisplay" class="mt-4"></div>
+                        <div id="dimensionsDisplay" class="mt-4"></div>
+                        <div id="performanceDisplay" class="mt-4"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload history -->
+            <section id="historySection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Upload History</h2>
+                        <p class="portal-section-desc">Status and mentor comments for everything you submitted.</p>
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div id="uploadHistory">
+                        <p class="portal-empty">No uploads yet.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Templates -->
+            <section id="templateSection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Template Files</h2>
+                        <p class="portal-section-desc">Download the official templates before you submit.</p>
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <ul id="templateList"></ul>
+                </div>
+            </section>
+
+            <!-- Mentor & contact -->
+            <section id="mentorSection" class="portal-section">
+                <div class="portal-section-head">
+                    <div>
+                        <h2 class="portal-section-title">Mentor &amp; Contact</h2>
+                        <p class="portal-section-desc">Who to reach out to for guidance.</p>
+                    </div>
+                </div>
+
+                <div class="portal-grid">
+                    <div class="portal-card">
+                        <div class="portal-stat-label">Assigned mentor</div>
+                        <p id="mentorName" class="portal-profile-meta">Not Assigned</p>
+                    </div>
+
+                    <div class="portal-card">
+                        <div class="portal-stat-label">IPD Head</div>
+                        <div class="portal-stat-value">Dr. PURUSHOTHAMAN</div>
+                        <p class="portal-card-desc">HEAD - IPD</p>
+                        <p class="portal-card-desc">head.ipd@act.edu.in</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-lg relative">
+            <h2 class="text-xl font-bold mb-4">Edit Profile</h2>
+
+            <form id="editForm" class="space-y-4">
+                <div>
+                    <label for="editMobile" class="portal-label">Team leader mobile number</label>
+                    <input type="text" id="editMobile" name="editMobile" maxlength="10" class="p-2 w-full border rounded"
+                        required>
+                </div>
+
+                <div>
+                    <h3 class="portal-card-title mt-4 mb-2">Team members contact numbers</h3>
+                    <div id="studentEditFields" class="space-y-3"></div>
+                </div>
+
+                <p id="updateMsg" class="text-sm font-semibold"></p>
+
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" id="cancelBtn" class="portal-btn portal-btn-ghost">Cancel</button>
+                    <button type="submit" class="portal-btn portal-btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SWOT Analysis Modal -->
+    <div id="swotModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+            <button id="closeSwotModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+            <iframe id="swotIframe" src="swot.html" class="w-full h-[80vh] border rounded"
+                style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Idea Generation Modal -->
+    <div id="ideaModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+            <button id="closeIdeaModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+            <iframe id="ideaIframe" src="idea.html" class="w-full h-[80vh] border rounded"
+                style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Value Proposition Modal -->
+    <div id="valueModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+            <button id="closeValueModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+            <iframe id="valueIframe" src="value.html" class="w-full h-[80vh] border rounded"
+                style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Problem Statement Modal -->
+    <div id="problemModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-2xl relative overflow-auto max-h-[90vh]">
+            <button id="closeProblemModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+            <h2 class="text-xl font-bold mb-4">Add Problem Statement</h2>
+
+            <form id="problemStatementForm" class="space-y-4">
+                <div>
+                    <label for="problemDescription" class="portal-label">Problem statement</label>
+                    <textarea id="problemDescription" name="problemDescription" rows="4" required
+                        class="w-full border rounded-lg p-2"></textarea>
+                </div>
+
+                <div>
+                    <label for="selectedIdea" class="portal-label">Selected idea</label>
+                    <textarea id="selectedIdea" name="selectedIdea" rows="3" required
+                        class="w-full border rounded-lg p-2"></textarea>
+                </div>
+
+                <p id="problemMessage" class="text-center text-sm font-semibold text-gray-700"></p>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelProblemBtn" class="portal-btn portal-btn-ghost">Cancel</button>
+                    <button type="submit" class="portal-btn portal-btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Requirements Modal -->
+    <div id="userReqModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center overflow-y-auto z-50 hidden">
+        <div class="portal-modal-panel bg-white p-6 w-full max-w-4xl relative overflow-auto max-h-[90vh]">
+            <button id="closeUserReqModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+
+            <h2 class="text-xl font-bold mb-4">User Requirements &amp; Product Features (MOSCOW)</h2>
+
+            <form id="userReqForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4 font-semibold text-gray-700">
+                    <div>User Requirements</div>
+                    <div>Product Features (MOSCOW)</div>
+                </div>
+
+                <div class="space-y-3">
+                    <div id="userReqRows"></div>
+
+                    <div class="mt-6 border-t pt-6">
+                        <h3 class="portal-card-title mb-4">MOSCOW Method</h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="portal-label" for="mustHave">Must have</label>
+                                <textarea rows="3" id="mustHave" class="w-full border rounded-lg p-3"
+                                    placeholder="Enter must have requirements..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="portal-label" for="shouldHave">Should have</label>
+                                <textarea rows="3" id="shouldHave" class="w-full border rounded-lg p-3"
+                                    placeholder="Enter should have requirements..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="portal-label" for="couldHave">Could have</label>
+                                <textarea rows="3" id="couldHave" class="w-full border rounded-lg p-3"
+                                    placeholder="Enter could have requirements..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="portal-label" for="wontHave">Won’t have</label>
+                                <textarea rows="3" id="wontHave" class="w-full border rounded-lg p-3"
+                                    placeholder="Enter won't have requirements..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelUserReqBtn" class="portal-btn portal-btn-ghost">Cancel</button>
+                    <button type="submit" class="portal-btn portal-btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="popupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="portal-modal-panel bg-white w-4/5 max-h-[90vh] overflow-y-auto p-6">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4"></h2>
+
+            <div id="modalTableContainer"></div>
+
+            <div class="text-right mt-4">
+                <button id="cancelPopupBtn" class="portal-btn portal-btn-ghost mr-2">Cancel</button>
+                <button id="savePopupBtn" class="portal-btn portal-btn-success">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/upload-titles.js"></script>
+    <script src="/js/portal-shell.js"></script>
+    <script src="/js/dashboard.js"></script>
+
+</body>
+
+</html>

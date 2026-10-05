@@ -1,0 +1,12 @@
+.env
+serviceAccountKey.json
+node_modules/
+access.log
+exportfirestore.js
+firebase_export.json
+importfirebasedata.js
+mentor_export.json
+mentor_import.js
+google-serviceAccountKey.json
+migrate.js
+restore-sem1-results.js

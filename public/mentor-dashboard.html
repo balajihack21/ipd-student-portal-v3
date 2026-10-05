@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mentor Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/portal.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    .rubric-label {
+      padding: 6px 12px;
+      border: 1px solid var(--pt-border);
+      border-radius: var(--pt-radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .rubric-label.selected {
+      background-color: var(--pt-primary);
+      color: #fff;
+      border-color: var(--pt-primary-dark);
+    }
+  </style>
+</head>
+
+<body class="portal-body">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="portal-sidebar -translate-x-full">
+    <div class="portal-brand">
+      <img src="./images/IPD_Design_Logo.png" alt="IPD logo">
+      <div>
+        <div class="portal-brand-title">IPD Portal</div>
+        <div class="portal-brand-sub">Mentor</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="portal-nav-label">Workspace</div>
+      <div class="portal-nav" id="navMenu">
+        <a href="#overviewSection" class="menu-item active"><span class="nav-icon">🏠</span> Overview</a>
+        <a href="#assignedTeams" class="menu-item"><span class="nav-icon">👥</span> Assigned Teams</a>
+        <a href="#sem1Review1Section" class="menu-item" data-watch="sem1Review1Section"><span class="nav-icon">📝</span> Sem 1 Review 1</a>
+        <a href="#sem1Review2Section" class="menu-item" data-watch="sem1Review2Section"><span class="nav-icon">📝</span> Sem 1 Review 2</a>
+        <a href="#sem1WorkbookSection" class="menu-item" data-watch="sem1WorkbookSection"><span class="nav-icon">📚</span> Sem 1 Workbook</a>
+        <a href="#sem2Review1Section" class="menu-item" data-watch="sem2Review1Section"><span class="nav-icon">📝</span> Sem 2 Review 1</a>
+        <a href="#sem2Review2Section" class="menu-item" data-watch="sem2Review2Section"><span class="nav-icon">📝</span> Sem 2 Review 2</a>
+        <a href="#sem2WorkbookSection" class="menu-item" data-watch="sem2WorkbookSection"><span class="nav-icon">📚</span> Sem 2 Workbook</a>
+        <a href="#sem3Review1Section" class="menu-item" data-watch="sem3Review1Section"><span class="nav-icon">📝</span> Sem 3 Review 1</a>
+        <a href="#sem3Review2Section" class="menu-item" data-watch="sem3Review2Section"><span class="nav-icon">📝</span> Sem 3 Review 2</a>
+        <a href="#sem3WorkbookSection" class="menu-item" data-watch="sem3WorkbookSection"><span class="nav-icon">📚</span> Sem 3 Workbook</a>
+        <a href="#sem4Review1Section" class="menu-item" data-watch="sem4Review1Section"><span class="nav-icon">📝</span> Sem 4 Review 1</a>
+        <a href="#sem4Review2Section" class="menu-item" data-watch="sem4Review2Section"><span class="nav-icon">📝</span> Sem 4 Review 2</a>
+        <a href="#sem4WorkbookSection" class="menu-item" data-watch="sem4WorkbookSection"><span class="nav-icon">📚</span> Sem 4 Workbook</a>
+        <a href="#mentorSection" class="menu-item"><span class="nav-icon">✉</span> Contact</a>
+      </div>
+    </nav>
+
+    <div class="portal-sidebar-footer">
+      <div class="portal-sidebar-note">Innovation &amp; Product Development Cell</div>
+      <button id="logout" class="portal-logout">Logout</button>
+    </div>
+  </aside>
+
+  <div class="portal-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Main -->
+  <div class="portal-main">
+    <header class="portal-topbar">
+      <div class="flex items-center gap-3">
+        <button class="portal-menu-btn" id="toggleSidebar" aria-label="Toggle navigation">☰</button>
+        <div>
+          <h1>Mentor Dashboard</h1>
+          <div class="portal-topbar-sub">Assigned teams, submissions and review marks</div>
+        </div>
+      </div>
+
+      <div class="portal-topbar-actions">
+        <div class="portal-topbar-logos">
+          <img src="./images/AGNI-LOGO-AUTO.png" alt="Agni College of Technology">
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-content">
+
+      <!-- Overview -->
+      <section id="overviewSection" class="portal-section">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Overview</h2>
+            <p class="portal-section-desc">Your profile and the batch you are currently reviewing.</p>
+          </div>
+        </div>
+
+        <div id="mentorDetails" class="portal-stats">
+          <div class="portal-stat">
+            <div class="portal-stat-label">Mentor</div>
+            <div class="portal-stat-value" id="mentorName">Loading...</div>
+          </div>
+          <div class="portal-stat">
+            <div class="portal-stat-label">Email</div>
+            <div class="portal-stat-value" id="mentorEmail">—</div>
+          </div>
+          <div class="portal-stat">
+            <div class="portal-stat-label">Batch</div>
+            <div class="portal-stat-value" id="mentordept">25IPD</div>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-card-head">
+            <div>
+              <h3 class="portal-card-title">Batch</h3>
+              <p class="portal-card-desc">Teams below are filtered by the selected batch.</p>
+            </div>
+          </div>
+          <div class="portal-field">
+            <label for="batchSelect" class="portal-label">Select batch</label>
+            <select id="batchSelect">
+              <option value="24ipd">24IPD (24 Batch)</option>
+              <option value="25ipd" selected>25IPD (25 Batch)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assigned Teams -->
+      <section id="assignedTeams" class="portal-section">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Assigned Teams</h2>
+            <p class="portal-section-desc">Open a team to review its submissions and leave comments.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div id="teamList">
+            <!-- JS appends team cards here -->
+            <p class="portal-empty">Loading teams…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Semester 1 Review 1 -->
+      <section id="sem1Review1Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 1 — Review 1 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem1Review1TeamSelect" class="portal-label">Select team</label>
+            <select id="sem1Review1TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem1Review1TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem1Review1Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 1 Review 1 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 1 Review 2 -->
+      <section id="sem1Review2Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 1 — Review 2 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem1Review2TeamSelect" class="portal-label">Select team</label>
+            <select id="sem1Review2TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem1Review2TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem1Review2Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 1 Review 2 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 1 Workbook -->
+      <section id="sem1WorkbookSection" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 1 — Workbook Scores (out of 40)</h2>
+            <p class="portal-section-desc">Coordinator only. Assign workbook scores per team.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem1WorkbookTeamSelect" class="portal-label">Select team</label>
+            <select id="sem1WorkbookTeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div class="portal-field">
+            <label for="sem1WorkbookScoreInput" class="portal-label">Workbook Score (0-40)</label>
+            <input type="number" id="sem1WorkbookScoreInput" min="0" max="40" class="portal-input" />
+          </div>
+
+          <button id="submitSem1Workbook" class="portal-btn portal-btn-success mt-4">
+            Submit Sem 1 Workbook Score
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 2 Review 1 -->
+      <section id="sem2Review1Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 2 — Review 1 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem2Review1TeamSelect" class="portal-label">Select team</label>
+            <select id="sem2Review1TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem2Review1TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem2Review1Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 2 Review 1 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 2 Review 2 -->
+      <section id="sem2Review2Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 2 — Review 2 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem2Review2TeamSelect" class="portal-label">Select team</label>
+            <select id="sem2Review2TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem2Review2TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem2Review2Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 2 Review 2 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 2 Workbook -->
+      <section id="sem2WorkbookSection" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 2 — Workbook Scores (out of 40)</h2>
+            <p class="portal-section-desc">Coordinator only. Assign workbook scores per team.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem2WorkbookTeamSelect" class="portal-label">Select team</label>
+            <select id="sem2WorkbookTeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div class="portal-field">
+            <label for="sem2WorkbookScoreInput" class="portal-label">Workbook Score (0-40)</label>
+            <input type="number" id="sem2WorkbookScoreInput" min="0" max="40" class="portal-input" />
+          </div>
+
+          <button id="submitSem2Workbook" class="portal-btn portal-btn-success mt-4">
+            Submit Sem 2 Workbook Score
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 3 Review 1 -->
+      <section id="sem3Review1Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 3 — Review 1 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem3Review1TeamSelect" class="portal-label">Select team</label>
+            <select id="sem3Review1TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem3Review1TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem3Review1Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 3 Review 1 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 3 Review 2 -->
+      <section id="sem3Review2Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 3 — Review 2 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem3Review2TeamSelect" class="portal-label">Select team</label>
+            <select id="sem3Review2TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem3Review2TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem3Review2Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 3 Review 2 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 3 Workbook -->
+      <section id="sem3WorkbookSection" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 3 — Workbook Scores (out of 40)</h2>
+            <p class="portal-section-desc">Coordinator only. Assign workbook scores per team.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem3WorkbookTeamSelect" class="portal-label">Select team</label>
+            <select id="sem3WorkbookTeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div class="portal-field">
+            <label for="sem3WorkbookScoreInput" class="portal-label">Workbook Score (0-40)</label>
+            <input type="number" id="sem3WorkbookScoreInput" min="0" max="40" class="portal-input" />
+          </div>
+
+          <button id="submitSem3Workbook" class="portal-btn portal-btn-success mt-4">
+            Submit Sem 3 Workbook Score
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 4 Review 1 -->
+      <section id="sem4Review1Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 4 — Review 1 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem4Review1TeamSelect" class="portal-label">Select team</label>
+            <select id="sem4Review1TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem4Review1TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem4Review1Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 4 Review 1 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 4 Review 2 -->
+      <section id="sem4Review2Section" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 4 — Review 2 Marks (out of 30)</h2>
+            <p class="portal-section-desc">Coordinator only. Enter review marks for students.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem4Review2TeamSelect" class="portal-label">Select team</label>
+            <select id="sem4Review2TeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div id="sem4Review2TableContainer" class="portal-table-wrap mt-4"></div>
+
+          <button id="submitSem4Review2Marks" class="portal-btn portal-btn-success mt-4 hidden">
+            Submit Sem 4 Review 2 Marks
+          </button>
+        </div>
+      </section>
+
+      <!-- Semester 4 Workbook -->
+      <section id="sem4WorkbookSection" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Semester 4 — Workbook Scores (out of 40)</h2>
+            <p class="portal-section-desc">Coordinator only. Assign workbook scores per team.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="sem4WorkbookTeamSelect" class="portal-label">Select team</label>
+            <select id="sem4WorkbookTeamSelect">
+              <option value="">-- Select Team --</option>
+            </select>
+          </div>
+
+          <div class="portal-field">
+            <label for="sem4WorkbookScoreInput" class="portal-label">Workbook Score (0-40)</label>
+            <input type="number" id="sem4WorkbookScoreInput" min="0" max="40" class="portal-input" />
+          </div>
+
+          <button id="submitSem4Workbook" class="portal-btn portal-btn-success mt-4">
+            Submit Sem 4 Workbook Score
+          </button>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section id="mentorSection" class="portal-section">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Contact</h2>
+            <p class="portal-section-desc">IPD cell coordinator for escalations.</p>
+          </div>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-stat-label">IPD Head</div>
+          <div class="portal-stat-value">Dr. PURUSHOTHAMAN</div>
+          <p class="portal-card-desc">HEAD - IPD</p>
+          <p class="portal-card-desc">head.ipd@act.edu.in</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SWOT Modal -->
+  <div id="swotModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+      <button id="closeSwotModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+      <iframe id="swotIframe" src="" class="w-full h-[80vh] border rounded"
+        style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- Idea Generation Modal -->
+  <div id="ideaModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+      <button id="closeIdeaModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+      <iframe id="ideaIframe" src="" class="w-full h-[80vh] border rounded"
+        style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- Value Proposition Modal -->
+  <div id="valueModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="portal-modal-panel bg-white p-6 w-full max-w-3xl relative overflow-auto max-h-[90vh]">
+      <button id="closeValueModal" class="portal-modal-close absolute top-3 right-3">&times;</button>
+      <iframe id="valueIframe" src="" class="w-full h-[80vh] border rounded"
+        style="width:100%; height:80vh; border-radius:6px; border:1px solid #e4e8f0;">
+      </iframe>
+    </div>
+  </div>
+
+  <div id="popupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto z-50">
+    <div class="min-h-screen flex items-start justify-center p-6">
+      <div class="portal-modal-panel bg-white w-4/5 max-h-[90vh] flex flex-col">
+        <div class="p-6 border-b flex-shrink-0">
+          <h2 id="modalTitle" class="text-xl font-bold"></h2>
+        </div>
+
+        <div id="modalTableContainer" class="flex-1 overflow-y-auto p-6"></div>
+
+        <div class="p-6 border-t text-right flex-shrink-0">
+          <button id="cancelPopupBtn" class="portal-btn portal-btn-ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/upload-titles.js"></script>
+  <script src="/js/portal-shell.js"></script>
+  <script src="/js/mentor-dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategyzer VPC Layout</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    margin: 30px;
+    background: #f9f9f9;
+  }
+  .vpc-container {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Customer Profile (Square) */
+  .customer-profile {
+    width: 300px;
+    border: 2px solid #222;
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .customer-profile section {
+    flex: 1;
+    border-bottom: 1px solid #ccc;
+    padding: 15px;
+  }
+  .customer-profile section:last-child { border-bottom: none; }
+  .customer-profile h3 {
+    margin: 0 0 8px 0;
+    text-align: center;
+    font-size: 16px;
+    color: #333;
+  }
+
+  ul { list-style: disc; padding-left: 20px; margin: 5px 0; max-height: 80px; overflow-y: auto; font-size: 14px; }
+  input[type=text] {
+    width: 70%;
+    padding: 5px;
+    font-size: 13px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+  }
+  button {
+    padding: 5px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    background: #007acc;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover { background: #005fa3; }
+
+  /* Value Map (Circle with SVG) */
+  .value-map {
+    width: 320px;
+    height: 320px;
+    position: relative;
+  }
+  svg { width: 100%; height: 100%; }
+
+  /* Hover effect on slices */
+  .slice { transition: 0.3s; cursor: pointer; }
+  .slice:hover { opacity: 0.8; transform: scale(1.02); }
+
+  /* Labels inside slices */
+  .segment-label {
+    position: absolute;
+    width: 110px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #222;
+  }
+  .segment-label ul { list-style: none; padding: 0; margin: 5px 0; font-weight: normal; }
+  .segment-label input { width: 100%; margin-top: 5px; }
+  .segment-label button { margin-top: 4px; width: 100%; }
+
+  /* Positioning */
+  .label1 { top: 20px; left: 100px; }
+  .label2 { bottom: 40px; right: 10px; }
+  .label3 { bottom: 40px; left: 10px; }
+
+  @media (max-width: 700px) {
+    .vpc-container { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="vpc-container">
+  <!-- Left: Customer Profile -->
+  <div class="customer-profile">
+    <section>
+      <h3>Jobs</h3>
+      <ul id="jobsList"></ul>
+      <input type="text" id="jobInput" placeholder="Add Job">
+      <button onclick="addItem('job')">Add</button>
+    </section>
+    <section>
+      <h3>Pains</h3>
+      <ul id="painsList"></ul>
+      <input type="text" id="painInput" placeholder="Add Pain">
+      <button onclick="addItem('pain')">Add</button>
+    </section>
+    <section>
+      <h3>Gains</h3>
+      <ul id="gainsList"></ul>
+      <input type="text" id="gainInput" placeholder="Add Gain">
+      <button onclick="addItem('gain')">Add</button>
+    </section>
+  </div>
+
+  <!-- Right: Value Map Circle -->
+  <div class="value-map">
+    <svg viewBox="0 0 200 200">
+      <!-- Products & Services -->
+      <path class="slice" d="M100,100 L100,0 A100,100 0 0,1 200,100 Z" fill="rgba(180,200,255,0.6)" stroke="#333"/>
+      <!-- Pain Relievers -->
+      <path class="slice" d="M100,100 L200,100 A100,100 0 0,1 50,186.6 Z" fill="rgba(180,255,200,0.6)" stroke="#333"/>
+      <!-- Gain Creators -->
+      <path class="slice" d="M100,100 L50,186.6 A100,100 0 0,1 100,0 Z" fill="rgba(255,200,200,0.6)" stroke="#333"/>
+    </svg>
+
+    <!-- Labels + Inputs -->
+    <div class="segment-label label1">
+      <div>Products & Services</div>
+      <ul id="productsList"></ul>
+      <input type="text" id="productInput" placeholder="Add Product">
+      <button onclick="addItem('product')">Add</button>
+    </div>
+
+    <div class="segment-label label2">
+      <div>Pain Relievers</div>
+      <ul id="relieversList"></ul>
+      <input type="text" id="relieverInput" placeholder="Add Reliever">
+      <button onclick="addItem('reliever')">Add</button>
+    </div>
+
+    <div class="segment-label label3">
+      <div>Gain Creators</div>
+      <ul id="creatorsList"></ul>
+      <input type="text" id="creatorInput" placeholder="Add Creator">
+      <button onclick="addItem('creator')">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function addItem(type) {
+  let input, list;
+  switch(type) {
+    case 'job': input = document.getElementById('jobInput'); list = document.getElementById('jobsList'); break;
+    case 'pain': input = document.getElementById('painInput'); list = document.getElementById('painsList'); break;
+    case 'gain': input = document.getElementById('gainInput'); list = document.getElementById('gainsList'); break;
+    case 'product': input = document.getElementById('productInput'); list = document.getElementById('productsList'); break;
+    case 'reliever': input = document.getElementById('relieverInput'); list = document.getElementById('relieversList'); break;
+    case 'creator': input = document.getElementById('creatorInput'); list = document.getElementById('creatorsList'); break;
+  }
+
+  if(input.value.trim() !== '') {
+    const li = document.createElement('li');
+    li.textContent = input.value;
+    list.appendChild(li);
+    input.value = '';
+  }
+}
+</script>
+
+</body>
+</html>
