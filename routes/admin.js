@@ -149,10 +149,117 @@ router.get('/assigned-teams', async (req, res) => {
 // GET all mentors
 router.get('/mentors', async (req, res) => {
   try {
-    const mentors = await Mentor.findAll();
+    const mentors = await Mentor.findAll({
+      attributes: ['mentorId', 'title', 'name', 'email', 'department', 'designation', 'is_coordinator'],
+      order: [['name', 'ASC']],
+    });
     res.json(mentors);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// CREATE a mentor account for admin assignment
+router.post('/mentors', async (req, res) => {
+  try {
+    const title = String(req.body.title || '').trim() || null;
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const department = String(req.body.department || '').trim();
+    const designation = String(req.body.designation || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!name || !email || !department || !designation || password.length < 8) {
+      return res.status(400).json({ error: 'Name, email, department, designation and a password of at least 8 characters are required' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Enter a valid email address' });
+    }
+
+    const mentor = await sequelize.transaction(async (transaction) => {
+      const existing = await Mentor.findOne({ where: { email }, transaction });
+      if (existing) {
+        const error = new Error('A mentor with this email already exists');
+        error.status = 409;
+        throw error;
+      }
+
+      const latestMentor = await Mentor.findOne({
+        attributes: ['mentorId'],
+        order: [['mentorId', 'DESC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      return Mentor.create({
+        mentorId: (latestMentor?.mentorId || 0) + 1,
+        title,
+        name,
+        email,
+        department,
+        designation,
+        password,
+        firstLogin: true,
+        is_coordinator: false,
+      }, { transaction });
+    });
+
+    res.status(201).json({
+      success: true,
+      mentor: {
+        mentorId: mentor.mentorId,
+        title: mentor.title,
+        name: mentor.name,
+        email: mentor.email,
+        department: mentor.department,
+        designation: mentor.designation,
+        is_coordinator: mentor.is_coordinator,
+      },
+    });
+  } catch (err) {
+    console.error('Error creating mentor:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to create mentor' });
+  }
+});
+
+// Delete a mentor and leave any previously assigned teams unassigned.
+router.delete('/mentors/:mentorId', async (req, res) => {
+  try {
+    const mentorId = Number(req.params.mentorId);
+    if (!Number.isInteger(mentorId) || mentorId <= 0) {
+      return res.status(400).json({ error: 'Invalid mentor ID' });
+    }
+
+    const unassignedTeams = await sequelize.transaction(async (transaction) => {
+      const mentor = await Mentor.findByPk(mentorId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!mentor) {
+        const error = new Error('Mentor not found');
+        error.status = 404;
+        throw error;
+      }
+
+      const assignedTeamCount = await User.count({
+        where: { mentor_id: mentorId },
+        transaction,
+      });
+      if (assignedTeamCount > 0) {
+        await User.update(
+          { mentor_id: null },
+          { where: { mentor_id: mentorId }, transaction }
+        );
+      }
+
+      await mentor.destroy({ transaction });
+      return assignedTeamCount;
+    });
+
+    res.json({ success: true, unassignedTeams });
+  } catch (err) {
+    console.error('Error deleting mentor:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to delete mentor' });
   }
 });
 
@@ -407,10 +514,10 @@ console.log(student.email,mentor.email)
 // Update an existing team and its existing students in one manager action.
 router.put('/team-manager', async (req, res) => {
   try {
-    const { teamId, team_name, email, mobile, mentor_id, students = [] } = req.body;
+    const { teamId, team_name, email, mobile, mentor_id, students = [], deletedStudentIds = [] } = req.body;
 
-    if (!teamId || !team_name || !email || !mobile || !Array.isArray(students)) {
-      return res.status(400).json({ error: 'Valid team details and a students array are required' });
+    if (!teamId || !team_name || !email || !mobile || !Array.isArray(students) || !Array.isArray(deletedStudentIds)) {
+      return res.status(400).json({ error: 'Valid team details, students and deletedStudentIds are required' });
     }
 
     const result = await sequelize.transaction(async (transaction) => {
@@ -426,6 +533,29 @@ router.put('/team-manager', async (req, res) => {
       team.mobile = mobile;
       team.mentor_id = mentor_id || null;
       await team.save({ transaction });
+
+      const uniqueDeletedIds = [...new Set(deletedStudentIds.map(String))];
+      if (uniqueDeletedIds.length) {
+        const studentsToDelete = await Student.findAll({
+          where: {
+            id: { [Op.in]: uniqueDeletedIds },
+            user_id: teamId,
+          },
+          transaction,
+        });
+        if (studentsToDelete.length !== uniqueDeletedIds.length) {
+          const error = new Error('One or more selected members do not belong to this team');
+          error.status = 400;
+          throw error;
+        }
+        await Student.destroy({
+          where: {
+            id: { [Op.in]: uniqueDeletedIds },
+            user_id: teamId,
+          },
+          transaction,
+        });
+      }
 
       for (const item of students) {
         if (!item.student_name || !item.register_no || !item.dept || !item.section) {

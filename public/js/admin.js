@@ -1,3 +1,44 @@
+const addMentorForm = document.getElementById("addMentorForm");
+addMentorForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = document.getElementById("addMentorMessage");
+  const submitButton = form.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  message.textContent = "Saving mentor...";
+  message.className = "mt-3 text-sm text-gray-600";
+
+  try {
+    await axios.post('/admin/mentors', {
+      title: document.getElementById("newMentorTitle").value,
+      name: document.getElementById("newMentorName").value.trim(),
+      email: document.getElementById("newMentorEmail").value.trim(),
+      department: document.getElementById("newMentorDepartment").value.trim(),
+      designation: document.getElementById("newMentorDesignation").value.trim(),
+      password: document.getElementById("newMentorPassword").value,
+    });
+
+    form.reset();
+    message.textContent = "Mentor saved. Refresh the team assignment list to use the new mentor.";
+    message.className = "mt-3 text-sm text-green-700";
+
+    try {
+      await fetchMentorsAndTeams();
+      await fetchTeams();
+      renderReassignMentorTable();
+      renderMentorDirectory();
+      message.textContent = "Mentor added and available for team assignment.";
+    } catch (refreshError) {
+      console.error("Mentor saved, but assignment lists could not refresh:", refreshError);
+    }
+  } catch (err) {
+    message.textContent = err.response?.data?.error || "Unable to add mentor.";
+    message.className = "mt-3 text-sm text-red-700";
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
 const tabs = document.querySelectorAll(".tab");
 const contents = document.querySelectorAll(".tab-content");
 
@@ -16,9 +57,9 @@ function refreshAllTabsForBatch() {
     currentPage = 1;
     renderTeams(filteredTeams);
 
-    // Reassign tab shares filteredTeams
+    // Refresh assignment results independently from the Project Teams table.
     currentReassignPage = 1;
-    renderReassignMentorTable();
+    applyReassignFilters();
   }
 
   // History tab
@@ -406,6 +447,7 @@ let allMentors = [];
 
 let currentTeams = [];
 let filteredTeams = [];
+let filteredAssignmentTeams = [];
 let filteredHistory = [];
 
 async function fetchTeams() {
@@ -413,6 +455,7 @@ async function fetchTeams() {
   currentTeams = res.data;
   filteredTeams = currentTeams.filter(t => matchesBatch(t.UserId));
   renderTeams(filteredTeams);
+  applyReassignFilters();
   attachFilters()
 
 
@@ -996,7 +1039,7 @@ function renderReassignMentorTable() {
   const container = document.getElementById("reassignTableContainer");
 
   const startIndex = (currentReassignPage - 1) * reassignItemsPerPage;
-  const paginatedTeams = filteredTeams.slice(startIndex, startIndex + reassignItemsPerPage);
+  const paginatedTeams = filteredAssignmentTeams.slice(startIndex, startIndex + reassignItemsPerPage);
 
   const rows = paginatedTeams.map(team => {
     const leader = team.Students?.find(s => s.is_leader);
@@ -1054,7 +1097,7 @@ function renderReassignMentorTable() {
     <div id="reassignPaginationControls" class="mt-4 flex flex-wrap gap-2"></div>
   `;
 
-  renderReassignPaginationControls(filteredTeams.length);
+  renderReassignPaginationControls(filteredAssignmentTeams.length);
 }
 
 function renderReassignPaginationControls(totalItems) {
@@ -1260,6 +1303,7 @@ function openTeamManagerModal(teamId) {
   }
   const allTeams = currentTeams.filter(t => t.UserId !== teamId);
   const students = team.Students || [];
+  const deletedStudentIds = new Set();
 
   title.textContent = `Edit Team: ${team.UserId}`;
 
@@ -1297,7 +1341,7 @@ function openTeamManagerModal(teamId) {
 
     <div id="teamManagerStudentRows" class="space-y-3">
       ${students.length ? students.map((student, idx) => `
-        <div class="grid grid-cols-1 md:grid-cols-7 gap-2 border rounded p-3 bg-gray-50 student-row" data-student-id="${student.id || "new"}">
+        <div class="grid grid-cols-1 md:grid-cols-8 gap-2 border rounded p-3 bg-gray-50 student-row" data-student-id="${student.id || "new"}">
           <input class="student-field student-name border rounded p-2" value="${student.student_name || ""}" placeholder="Name" />
           <input class="student-field student-reg border rounded p-2" value="${student.register_no || ""}" placeholder="Register no" />
           <input class="student-field student-dept border rounded p-2" value="${student.dept || ""}" placeholder="Dept" />
@@ -1311,6 +1355,7 @@ function openTeamManagerModal(teamId) {
             <input type="checkbox" class="student-leader" ${student.is_leader ? "checked" : ""} />
             Leader
           </label>
+          <button type="button" class="remove-team-member admin-btn admin-btn-danger">Remove</button>
         </div>
       `).join("") : `
         <p class="text-sm text-gray-600">This team has no student records.</p>
@@ -1365,6 +1410,10 @@ function openTeamManagerModal(teamId) {
       return;
     }
 
+    if (deletedStudentIds.size && !confirm(`Permanently delete ${deletedStudentIds.size} selected team member${deletedStudentIds.size === 1 ? "" : "s"}?`)) {
+      return;
+    }
+
     try {
       await axios.put("/admin/team-manager", {
         teamId: teamIdVal,
@@ -1373,6 +1422,7 @@ function openTeamManagerModal(teamId) {
         mobile: mobileVal,
         mentor_id: mentorIdVal || null,
         students: studentRows,
+        deletedStudentIds: [...deletedStudentIds],
       });
       alert("Team and member changes saved.");
 
@@ -1386,11 +1436,22 @@ function openTeamManagerModal(teamId) {
 
   document.getElementById("cancelTeamManagerBtn").onclick = () => modal.classList.add("hidden");
   document.getElementById("closeTeamManagerModal").onclick = () => modal.classList.add("hidden");
+  container.querySelectorAll(".remove-team-member").forEach(button => {
+    button.onclick = () => {
+      const row = button.closest(".student-row");
+      const studentId = row.dataset.studentId;
+      if (studentId) deletedStudentIds.add(studentId);
+      row.remove();
+      if (!container.querySelector(".student-row")) {
+        document.getElementById("teamManagerStudentRows").innerHTML = '<p class="text-sm text-gray-600">No members in this team. Add a member or save to keep the team empty.</p>';
+      }
+    };
+  });
   document.getElementById("teamManagerAddStudent").onclick = () => {
     const rows = document.getElementById("teamManagerStudentRows");
     rows.querySelector("p")?.remove();
     rows.insertAdjacentHTML("beforeend", `
-      <div class="grid grid-cols-1 md:grid-cols-7 gap-2 border rounded p-3 bg-gray-50 student-row" data-student-id="">
+      <div class="grid grid-cols-1 md:grid-cols-8 gap-2 border rounded p-3 bg-gray-50 student-row" data-student-id="">
         <input class="student-field student-name border rounded p-2" placeholder="Name" required />
         <input class="student-field student-reg border rounded p-2" placeholder="Register no" required />
         <input class="student-field student-dept border rounded p-2" placeholder="Dept" required />
@@ -1400,6 +1461,7 @@ function openTeamManagerModal(teamId) {
         <label class="flex items-center gap-2 border rounded p-2 bg-white">
           <input type="checkbox" class="student-leader" /> Leader
         </label>
+        <button type="button" class="remove-team-member admin-btn admin-btn-danger">Remove</button>
       </div>
     `);
   };
@@ -1546,35 +1608,111 @@ document.getElementById("exportHistoryExcel").addEventListener("click", () => {
 async function fetchMentorsAndTeams() {
   const mentorsRes = await axios.get('/admin/mentors');
   allMentors = mentorsRes.data;
+  renderMentorDirectory();
 }
 
+function renderMentorDirectory() {
+  const container = document.getElementById("mentorDirectoryTable");
+  if (!container) return;
+
+  const nameFilter = document.getElementById("mentorFilterName")?.value.trim().toLowerCase() || "";
+  const emailFilter = document.getElementById("mentorFilterEmail")?.value.trim().toLowerCase() || "";
+  const departmentFilter = document.getElementById("mentorFilterDepartment")?.value.trim().toLowerCase() || "";
+  const designationFilter = document.getElementById("mentorFilterDesignation")?.value.trim().toLowerCase() || "";
+  const visibleMentors = allMentors.filter(mentor =>
+    `${mentor.title || ""} ${mentor.name || ""}`.toLowerCase().includes(nameFilter) &&
+    (mentor.email || "").toLowerCase().includes(emailFilter) &&
+    (mentor.department || "").toLowerCase().includes(departmentFilter) &&
+    (mentor.designation || "").toLowerCase().includes(designationFilter)
+  );
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${visibleMentors.length ? visibleMentors.map(mentor => `
+          <tr>
+            <td>${mentor.title ? `${mentor.title} ` : ""}${mentor.name}</td>
+            <td>${mentor.email}</td>
+            <td>${mentor.department}</td>
+            <td>${mentor.designation}</td>
+            <td><button type="button" class="delete-mentor-btn admin-btn admin-btn-danger" data-mentor-id="${mentor.mentorId}">Delete</button></td>
+          </tr>
+        `).join("") : '<tr><td colspan="5">No matching mentors.</td></tr>'}
+      </tbody>
+    </table>
+  `;
+
+  container.querySelectorAll(".delete-mentor-btn").forEach(button => {
+    button.addEventListener("click", async () => {
+      const mentor = allMentors.find(item => String(item.mentorId) === button.dataset.mentorId);
+      if (!mentor || !confirm(`Delete mentor ${mentor.name}? Their assigned teams will remain but become unassigned.`)) return;
+
+      button.disabled = true;
+      try {
+        const response = await axios.delete(`/admin/mentors/${mentor.mentorId}`);
+        await fetchMentorsAndTeams();
+        await fetchTeams();
+        renderReassignMentorTable();
+        const unassignedTeams = response.data.unassignedTeams || 0;
+        alert(`Mentor deleted.${unassignedTeams ? ` ${unassignedTeams} team${unassignedTeams === 1 ? " is" : "s are"} now unassigned.` : ""}`);
+      } catch (err) {
+        alert(err.response?.data?.error || "Unable to delete mentor.");
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+function applyReassignFilters() {
+  const idVal = document.getElementById("filterTeamId")?.value.trim().toLowerCase() || "";
+  const nameVal = document.getElementById("filterTeamName")?.value.trim().toLowerCase() || "";
+  const leaderVal = document.getElementById("filterLeaderName")?.value.trim().toLowerCase() || "";
+  const emailVal = document.getElementById("filterTeamEmail")?.value.trim().toLowerCase() || "";
+  const mentorVal = document.getElementById("filterMentorName")?.value.trim().toLowerCase() || "";
+  const departmentVal = document.getElementById("filterMentorDepartment")?.value.trim().toLowerCase() || "";
+
+  filteredAssignmentTeams = currentTeams.filter(team =>
+    String(team.UserId || "").toLowerCase().includes(idVal) &&
+    String(team.team_name || "").toLowerCase().includes(nameVal) &&
+    String(team.Students?.find(student => student.is_leader)?.student_name || "").toLowerCase().includes(leaderVal) &&
+    String(team.email || "").toLowerCase().includes(emailVal) &&
+    String(team.mentor?.name || "").toLowerCase().includes(mentorVal) &&
+    String(team.mentor?.department || "").toLowerCase().includes(departmentVal) &&
+    matchesBatch(team.UserId)
+  );
+
+  currentReassignPage = 1;
+  renderReassignMentorTable();
+}
 
 function attachReassignFilters() {
-  const teamIdInput = document.getElementById("filterTeamId");
-  const teamNameInput = document.getElementById("filterTeamName");
-  const leaderNameInput = document.getElementById("filterLeaderName");
-  const mentorNameInput = document.getElementById("filterMentorName");
+  [
+    "filterTeamId",
+    "filterTeamName",
+    "filterLeaderName",
+    "filterTeamEmail",
+    "filterMentorName",
+    "filterMentorDepartment",
+  ].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", applyReassignFilters);
+  });
 
-  [teamIdInput, teamNameInput, leaderNameInput, mentorNameInput].forEach(input => {
-    input.addEventListener("input", () => {
-      const idVal = teamIdInput.value.toLowerCase();
-      const nameVal = teamNameInput.value.toLowerCase();
-      const leaderVal = leaderNameInput.value.toLowerCase();
-      const mentorVal = mentorNameInput.value.toLowerCase();
-
-      const filtered = currentTeams.filter(team =>
-        team.UserId.toLowerCase().includes(idVal) &&
-        team.team_name.toLowerCase().includes(nameVal) &&
-        (team.Students.find(s => s.is_leader)?.student_name || "").toLowerCase().includes(leaderVal) &&
-        (team.mentor?.name || "").toLowerCase().includes(mentorVal) &&
-        matchesBatch(team.UserId)
-      );
-
-      filteredTeams = filtered;
-      currentReassignPage = 1; // reset page when filtering
-      renderReassignMentorTable();
-
-    });
+  [
+    "mentorFilterName",
+    "mentorFilterEmail",
+    "mentorFilterDepartment",
+    "mentorFilterDesignation",
+  ].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", renderMentorDirectory);
   });
 }
 
@@ -1642,14 +1780,7 @@ function attachTeamsGeneralSearch() {
 // ASSIGN GENERAL SEARCH
 function attachAssignGeneralSearch() {
   const searchInput = document.getElementById("assignGeneralSearch");
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase();
-    filteredAssign = allMentors.filter(assign =>
-      JSON.stringify(assign).toLowerCase().includes(query)
-    );
-    assignCurrentPage = 1;
-    renderAssign(filteredAssign);
-  });
+  searchInput?.addEventListener("input", applyReassignFilters);
 }
 
 // HISTORY GENERAL SEARCH
@@ -1684,8 +1815,7 @@ try {
   attachHistoryGeneralSearch();
 }
 catch (err) {
-  window.location.href = "/login.html";
-  console.error(err);
+  console.error("Admin dashboard initialization failed:", err);
 }
 
 // Define all stages - 18 uploads + sem1_review1 + sem2_review1 + sem2_review2

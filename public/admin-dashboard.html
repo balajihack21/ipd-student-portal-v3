@@ -114,19 +114,60 @@
         <div class="admin-card">
           <div class="admin-card-head">
             <div>
+              <h2 class="admin-card-title">Add Mentor</h2>
+              <p class="admin-card-desc">Create a mentor account for assignment to project teams.</p>
+            </div>
+          </div>
+          <form id="addMentorForm" class="admin-filter-grid">
+            <select id="newMentorTitle" aria-label="Title">
+              <option value="">Title (optional)</option>
+              <option value="Dr.">Dr.</option>
+              <option value="Mr.">Mr.</option>
+              <option value="Ms.">Ms.</option>
+              <option value="Mrs.">Mrs.</option>
+            </select>
+            <input id="newMentorName" type="text" placeholder="Full name" required>
+            <input id="newMentorEmail" type="email" placeholder="Email address" required>
+            <input id="newMentorDepartment" type="text" placeholder="Department" required>
+            <input id="newMentorDesignation" type="text" placeholder="Designation" required>
+            <input id="newMentorPassword" type="password" placeholder="Initial password" minlength="8" required>
+            <button class="admin-btn admin-btn-primary" type="submit">＋ Save Mentor</button>
+          </form>
+          <p id="addMentorMessage" class="mt-3 text-sm" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <div>
               <h2 class="admin-card-title">Assign / Reassign Mentor</h2>
               <p class="admin-card-desc">Pick a mentor for any team and apply the change instantly.</p>
             </div>
           </div>
 
-          <input type="text" id="assignGeneralSearch" placeholder="🔍 Search anything..." class="mb-3">
-
           <div class="admin-filter-grid">
-            <input type="text" id="filterTeamId" placeholder="Team ID">
-            <input type="text" id="filterTeamName" placeholder="Team name">
-            <input type="text" id="filterLeaderName" placeholder="Leader name">
-            <input type="text" id="filterMentorName" placeholder="Mentor name">
+            <input type="search" id="filterTeamId" placeholder="Team ID">
+            <input type="search" id="filterTeamName" placeholder="Team name">
+            <input type="search" id="filterLeaderName" placeholder="Leader name">
+            <input type="search" id="filterTeamEmail" placeholder="Team email">
+            <input type="search" id="filterMentorName" placeholder="Assigned mentor">
+            <input type="search" id="filterMentorDepartment" placeholder="Mentor department">
           </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <div>
+              <h2 class="admin-card-title">Mentors</h2>
+              <p class="admin-card-desc">Remove mentor accounts that are no longer needed. Reassign their teams first.</p>
+            </div>
+          </div>
+          <div class="admin-filter-grid mb-3">
+            <input type="search" id="mentorFilterName" placeholder="Mentor name">
+            <input type="search" id="mentorFilterEmail" placeholder="Email">
+            <input type="search" id="mentorFilterDepartment" placeholder="Department">
+            <input type="search" id="mentorFilterDesignation" placeholder="Designation">
+          </div>
+          <div id="mentorDirectoryTable" class="admin-table-wrap"></div>
         </div>
 
         <div id="reassignTableContainer" class="admin-table-wrap"></div>
@@ -277,7 +318,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/js/upload-titles.js"></script>
-  <script src="/js/admin.js"></script>
+  <script src="/js/admin.js?v=20261006"></script>
 
 </body>
 
