@@ -406,7 +406,8 @@ body.admin-body {
 }
 
 .admin-content table.compact-team-table {
-  table-layout: fixed;
+  table-layout: auto;
+  min-width: 1180px;
   font-size: 12px;
 }
 
@@ -422,8 +423,13 @@ body.admin-body {
 }
 
 .compact-team-table td {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.compact-team-table td:nth-child(5),
+.compact-team-table td:nth-child(6),
+.compact-team-table td:nth-child(7) {
+  white-space: nowrap;
 }
 
 .compact-team-table td:last-child {
