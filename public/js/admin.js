@@ -989,41 +989,58 @@ function renderTeams(teams) {
         <tr>
           <th class="p-3">Team ID</th>
           <th class="p-3">Team Name</th>
-          <th class="p-3">Name</th>
-          <th class="p-3">Section</th>
-          <th class="p-3">Register No</th>
-          <th class="p-3">Mobile</th>
-          <th class="p-3">Email</th>
-          <th class="p-3">Dept</th>
-          <th class="p-3">Role</th>
-          <th class="p-3">Mentor Name</th>
-          <th class="p-3">Mentor Department</th>
+          <th class="p-3">Team Leader</th>
+          <th class="p-3">Leader Dept</th>
+          <th class="p-3">Members</th>
+          <th class="p-3">Team Mobile</th>
+          <th class="p-3">Team Email</th>
+          <th class="p-3">Mentor</th>
+          <th class="p-3">Mentor Dept</th>
           <th class="p-3">Actions</th>
         </tr>
       </thead>
       <tbody id="teamBody" class="bg-white divide-y">
-        ${paginatedTeams.map((team) =>
-    team.Students?.map((student, i) => `
-            <tr>
-              <td class="p-3">${i === 0 ? team.UserId : ''}</td>
-              <td class="p-3 font-medium text-blue-800">${i === 0 ? team.team_name : ''}</td>
-              <td class="p-3">${student.student_name || ''}</td>
-              <td class="p-3">${student.section || ''}</td>
-              <td class="p-3">${student.register_no || ''}</td>
-              <td class="p-3">${i === 0 ? team.mobile : ''}</td>
-              <td class="p-3">${i === 0 ? team.email : ''}</td>
-              <td class="p-3">${student.dept || ''}</td>
-              <td class="p-3">${student.is_leader ? 'TeamLeader' : `Student ${i}`}</td>
-              <td class="p-3">${i === 0 ? (team.mentor?.name || 'Unassigned') : ''}</td>
-              <td class="p-3">${i === 0 ? (team.mentor?.department || 'N/A') : ''}</td>
-              <td class="p-3">
-                ${i === 0 ? `<button class="manage-btn text-purple-600 hover:underline" data-team-id="${team.UserId}">Manage</button>` : ''}
-                <button class="edit-btn text-blue-600 hover:underline" data-team-id="${team.UserId}" data-reg="${student.register_no}">Edit</button>
-                <button class="delete-btn text-red-600 hover:underline" data-team-id="${team.UserId}" data-reg="${student.register_no}" data-is-leader="${student.is_leader}">Delete</button>
+        ${paginatedTeams.map((team) => {
+          const students = team.Students || [];
+          const leader = students.find(student => student.is_leader) || students[0];
+          const teamKey = String(team.UserId);
+          return `
+            <tr class="team-summary-row">
+              <td class="p-3">${team.UserId}</td>
+              <td class="p-3 font-medium text-blue-800">${team.team_name || ''}</td>
+              <td class="p-3">${leader?.student_name || 'No members'}</td>
+              <td class="p-3">${leader?.dept || 'N/A'}</td>
+              <td class="p-3">${students.length}</td>
+              <td class="p-3">${team.mobile || ''}</td>
+              <td class="p-3">${team.email || ''}</td>
+              <td class="p-3">${team.mentor?.name || 'Unassigned'}</td>
+              <td class="p-3">${team.mentor?.department || 'N/A'}</td>
+              <td class="p-3 team-row-actions">
+                <button type="button" class="expand-team-btn" data-team-key="${teamKey}" aria-expanded="false" aria-controls="team-members-${teamKey}" title="Show team members">▸</button>
+                <button type="button" class="manage-btn text-purple-600 hover:underline" data-team-id="${team.UserId}">Manage</button>
               </td>
             </tr>
-          `).join('')
-  ).join('')}
+            <tr id="team-members-${teamKey}" class="team-members-row hidden">
+              <td colspan="10">
+                ${students.length ? `
+                  <table class="team-members-detail-table">
+                    <thead><tr><th>Member</th><th>Section</th><th>Register No</th><th>Mobile</th><th>Department</th><th>Role</th></tr></thead>
+                    <tbody>${students.map((student, index) => `
+                      <tr>
+                        <td>${student.student_name || ''}</td>
+                        <td>${student.section || ''}</td>
+                        <td>${student.register_no || ''}</td>
+                        <td>${student.mobile || ''}</td>
+                        <td>${student.dept || ''}</td>
+                        <td>${student.is_leader ? 'TeamLeader' : `Team Member ${index}`}</td>
+                      </tr>
+                    `).join('')}</tbody>
+                  </table>
+                ` : '<p class="team-empty-members">No members in this team.</p>'}
+              </td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -1139,6 +1156,17 @@ function renderReassignPaginationControls(totalItems) {
 
 
 function bindActionButtons() {
+  document.querySelectorAll(".expand-team-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const details = document.getElementById(`team-members-${btn.dataset.teamKey}`);
+      const expanded = btn.getAttribute("aria-expanded") === "true";
+      details?.classList.toggle("hidden", expanded);
+      btn.setAttribute("aria-expanded", String(!expanded));
+      btn.textContent = expanded ? "▸" : "▾";
+      btn.title = expanded ? "Show team members" : "Hide team members";
+    });
+  });
+
   document.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const teamId = btn.getAttribute("data-team-id");
