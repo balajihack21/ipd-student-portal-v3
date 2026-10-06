@@ -405,6 +405,36 @@ body.admin-body {
   font-size: 13.5px;
 }
 
+.admin-content table.compact-team-table {
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.compact-team-table th,
+.compact-team-table td {
+  padding: 7px 8px;
+}
+
+.compact-team-table th {
+  font-size: 10px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.compact-team-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-team-table td:last-child {
+  white-space: nowrap;
+}
+
+.compact-team-table td button {
+  padding: 3px 5px;
+  font-size: 11px;
+}
+
 .admin-content thead tr {
   background: #f7f9fd;
 }

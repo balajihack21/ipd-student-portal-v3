@@ -984,7 +984,7 @@ function renderTeams(teams) {
   const paginatedTeams = teams.slice(startIndex, startIndex + itemsPerPage);
 
   container.innerHTML = `
-    <table class="min-w-full table-auto border rounded overflow-hidden shadow text-sm text-left">
+    <table class="min-w-full table-auto border rounded overflow-hidden shadow text-sm text-left compact-team-table">
       <thead class="bg-blue-100">
         <tr>
           <th class="p-3">Team ID</th>
@@ -1017,9 +1017,9 @@ function renderTeams(teams) {
               <td class="p-3">${i === 0 ? (team.mentor?.name || 'Unassigned') : ''}</td>
               <td class="p-3">${i === 0 ? (team.mentor?.department || 'N/A') : ''}</td>
               <td class="p-3">
-                <button class="manage-btn text-purple-600 hover:underline" data-team-id="${team.UserId}">Manage</button>
-                <button class="edit-btn text-blue-600 hover:underline ml-2" data-team-id="${team.UserId}" data-reg="${student.register_no}">Edit</button>
-                <button class="delete-btn text-red-600 hover:underline ml-2" data-team-id="${team.UserId}" data-reg="${student.register_no}" data-is-leader="${student.is_leader}">Delete</button>
+                ${i === 0 ? `<button class="manage-btn text-purple-600 hover:underline" data-team-id="${team.UserId}">Manage</button>` : ''}
+                <button class="edit-btn text-blue-600 hover:underline" data-team-id="${team.UserId}" data-reg="${student.register_no}">Edit</button>
+                <button class="delete-btn text-red-600 hover:underline" data-team-id="${team.UserId}" data-reg="${student.register_no}" data-is-leader="${student.is_leader}">Delete</button>
               </td>
             </tr>
           `).join('')
