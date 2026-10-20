@@ -48,6 +48,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/favicon.ico', (req, res) => {
+  res.type('png');
+  res.sendFile(path.join(__dirname, 'public', 'images', 'IPD_Design_Logo.png'));
+});
+
 // Logging
 const accessLogStream = fs.createWriteStream(
   path.join(__dirname, 'access.log'),
