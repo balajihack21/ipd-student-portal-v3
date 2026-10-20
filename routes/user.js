@@ -6,13 +6,14 @@ import { fileURLToPath } from 'url';
 import { Router } from 'express';
 // import { upload, uploadToSupabase } from "../middleware/upload.js";
 import { uploadprofile } from "../config/cloud_profile.js"
-import { uploadToBackblaze } from "../middleware/upload.js";
+import { deleteFromBackblaze, uploadToBackblaze } from "../middleware/upload.js";
 
 import User from '../models/User.js';
 import Mentor from '../models/Mentor.js';
 import Admin from '../models/Admin.js'
 import Student from '../models/Student.js'
 import TeamUpload from '../models/TeamUpload.js';
+import BatchTimeline from '../models/BatchTimeline.js';
 import UserRequirementCanvas from "../models/UserRequirementCanvas.js";
 import ProductDimensions from "../models/ProductDimensions.js";
 import PerformanceRequirement from '../models/PerformanceRequirement.js';
@@ -23,6 +24,15 @@ import { supabase } from "../config/cloudinary.js";
 import multer from 'multer';
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+const demoVideoUpload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const isMp4 = file.mimetype === 'video/mp4' && file.originalname.toLowerCase().endsWith('.mp4');
+    if (isMp4) return callback(null, true);
+    callback(new Error('Only .mp4 video files are accepted'));
+  },
+});
 
 dotenv.config();
 
@@ -805,6 +815,108 @@ router.get("/value-proposition/mine", authenticate, async (req, res) => {
 
 
 
+
+router.post("/upload-demo-video", authenticate, (req, res, next) => {
+  demoVideoUpload.single('file')(req, res, error => {
+    if (!error) return next();
+    const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    return res.status(status).json({ error: status === 413 ? 'Video must be 20 MB or smaller. Compress the video and try again.' : error.message });
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Select a demo video to upload' });
+
+    const userId = req.user.userId;
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ error: 'Team not found' });
+    if (user.isLocked) return res.status(403).json({ error: 'Your team is currently locked by the admin' });
+
+    const batch = String(user.UserId).match(/^(\d{2}IPD)/i)?.[1]?.toUpperCase();
+    if (!batch) return res.status(400).json({ error: 'Could not determine the team batch' });
+
+    const timeline = await BatchTimeline.findOne({ where: { batch, stage: 'upload_19' } });
+    const now = new Date();
+    if (!timeline || (timeline.start && now < timeline.start) || (timeline.deadline && now > timeline.deadline)) {
+      return res.status(403).json({ error: 'Demo video upload is not currently open for your batch' });
+    }
+
+    const { key: fileKey, signedUrl } = await uploadToBackblaze(
+      req.file.buffer,
+      `demo-prototype-${req.file.originalname}`,
+      req.file.mimetype
+    );
+
+    const [uploadEntry, created] = await TeamUpload.findOrCreate({
+      where: { user_id: userId, week_number: 19 },
+      defaults: {
+        file_url: signedUrl,
+        file_key: fileKey,
+        mentor_id: user.mentor_id,
+        status: 'SUBMITTED',
+        uploaded_at: now,
+      },
+    });
+
+    if (!created) {
+      const previousFileKey = uploadEntry.file_key;
+      uploadEntry.file_url = signedUrl;
+      uploadEntry.file_key = fileKey;
+      uploadEntry.mentor_id = user.mentor_id;
+      uploadEntry.status = 'SUBMITTED';
+      uploadEntry.review_comment = null;
+      uploadEntry.uploaded_at = now;
+      await uploadEntry.save();
+
+      if (previousFileKey && previousFileKey !== fileKey) {
+        try {
+          await deleteFromBackblaze(previousFileKey);
+        } catch (cleanupError) {
+          console.error('Previous demo video could not be removed from storage:', cleanupError);
+        }
+      }
+    }
+
+    if (user.mentor_id) {
+      try {
+        const mentor = await Mentor.findByPk(user.mentor_id);
+        if (mentor?.email) {
+          const client = Sib.ApiClient.instance;
+          client.authentications['api-key'].apiKey = process.env.EMAIL_PASSWORD;
+          const emailApi = new Sib.TransactionalEmailsApi();
+
+          await emailApi.sendTransacEmail({
+            sender: { email: process.env.EMAIL_USER, name: 'IPD-TEAM' },
+            to: [{ email: mentor.email }],
+            subject: `Demo Prototype Video Uploaded - ${user.team_name}`,
+            htmlContent: `
+              <h3>Hello ${mentor.title || ''} ${mentor.name},</h3>
+              <p><strong>${user.team_name}</strong> uploaded or replaced its demo prototype video.</p>
+              <p><a href="${signedUrl}" target="_blank" rel="noopener">Play demo video</a></p>
+              <p>Uploaded: ${now.toLocaleString()}</p>
+              <p>Best Regards,<br />IPD Team</p>
+            `,
+          });
+        }
+      } catch (emailError) {
+        console.error('Demo video was saved, but mentor notification failed:', emailError);
+      }
+    }
+
+    res.status(200).json({
+      message: 'Demo prototype video uploaded successfully',
+      upload: {
+        id: uploadEntry.id,
+        week_number: 19,
+        file_url: signedUrl,
+        uploaded_at: uploadEntry.uploaded_at,
+        status: uploadEntry.status,
+      },
+    });
+  } catch (err) {
+    console.error('Demo video upload error:', err);
+    res.status(500).json({ error: 'Demo video upload failed', details: err.message });
+  }
+});
 
 router.post("/upload", authenticate, upload.single("file"), async (req, res) => {
   try {

@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="/portal.css" rel="stylesheet">
+    <link href="/portal.css?v=20261020-demo-video" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
@@ -283,6 +283,19 @@
                             <div id="PPCProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
                         </div>
                         <p id="PPCStatus"></p>
+                    </div>
+                    <div class="portal-upload">
+                        <h3>Demo Prototype Video</h3>
+                        <div class="deadline-info" id="upload_19_deadline"></div>
+                        <p class="portal-card-desc">MP4 only. Maximum size: 20 MB. Compress larger videos before uploading.</p>
+                        <form id="demoVideoForm">
+                            <input type="file" id="demoVideoFile" accept=".mp4,video/mp4" required />
+                            <button type="submit" class="portal-btn portal-btn-primary portal-btn-block">Upload Video</button>
+                        </form>
+                        <div class="progress-bar-container">
+                            <div id="demoVideoProgress" class="h-6 w-0 bg-blue-600 text-white text-xs">0%</div>
+                        </div>
+                        <p id="demoVideoStatus"></p>
                     </div>
                     </div>
                 </div>
@@ -732,9 +745,9 @@
         </div>
     </div>
 
-    <script src="/js/upload-titles.js"></script>
+    <script src="/js/upload-titles.js?v=20261020-demo-video"></script>
     <script src="/js/portal-shell.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="/js/dashboard.js?v=20261020-demo-video-20mb"></script>
 
 </body>
 

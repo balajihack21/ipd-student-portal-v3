@@ -548,7 +548,7 @@ function historyUploadsHtml(team) {
   // Build list of uploads to display (REVIEWED + those with comments)
   const reviewedUploads = team.TeamUploads
     ? team.TeamUploads.filter(u =>
-      u.status === "REVIEWED" || (u.review_comment && u.review_comment.trim() !== "")
+      Number(u.week_number) === 19 || u.status === "REVIEWED" || (u.review_comment && u.review_comment.trim() !== "")
     )
     : [];
 
@@ -578,6 +578,12 @@ function historyUploadsHtml(team) {
     const isPendingTooLong = u.status !== 'REVIEWED' && daysPending > 2;
 
     let viewLink = "";
+    const videoPreview = Number(u.week_number) === 19 && u.file_url
+      ? `<video class="upload-video-preview" controls preload="metadata" src="${u.file_url}">Your browser does not support video playback.</video>`
+      : "";
+    const videoDeleteButton = Number(u.week_number) === 19
+      ? `<button type="button" class="delete-demo-video-btn admin-btn admin-btn-danger mt-2" data-upload-id="${u.id}">Delete video</button>`
+      : "";
     if (u.file_url) {
       viewLink = `<a href="${u.file_url}" class="text-blue-600 underline" target="_blank">${getUploadTitle(u.week_number)}</a>`;
     } else {
@@ -591,6 +597,8 @@ function historyUploadsHtml(team) {
     return `
       <div class="p-3 border rounded bg-gray-50 mb-2">
         ${viewLink}
+        ${videoPreview}
+        ${videoDeleteButton}
         <span class="text-xs text-gray-500 ml-1">(${new Date(u.uploaded_at).toLocaleString()})</span>
         ${isPendingTooLong
         ? `<span class="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">Pending > 2 days</span>`
@@ -860,7 +868,28 @@ document.getElementById("historyContent").addEventListener("click", (e) => {
     const uploadId = e.target.dataset.uploadId;
     submitAdminComment(uploadId);
   }
+
+  const deleteVideoButton = e.target.closest(".delete-demo-video-btn");
+  if (deleteVideoButton) {
+    deleteAdminDemoVideo(deleteVideoButton);
+  }
 });
+
+async function deleteAdminDemoVideo(button) {
+  const uploadId = button.dataset.uploadId;
+  if (!confirm("Delete this demo video from storage and the upload record? The student can upload a replacement while the timeline is open.")) return;
+
+  button.disabled = true;
+  try {
+    await axios.delete(`/admin/uploads/${uploadId}/demo-video`);
+    await fetchAllTeamHistories();
+    alert("Demo video deleted. The student can upload another video while the timeline is active.");
+  } catch (err) {
+    console.error("Failed to delete demo video:", err);
+    alert(err.response?.data?.error || "Unable to delete the demo video.");
+    button.disabled = false;
+  }
+}
 
 
 function renderHistoryPaginationControlsFiltered(totalItems) {
@@ -1887,7 +1916,8 @@ const stages = [
 
   // Additional submissions
   { key: "upload_17", label: "BMC Template", week: 17, group: "Additional" },
-  { key: "upload_18", label: "Prototype Planning Canvas", week: 18, group: "Additional" }
+  { key: "upload_18", label: "Prototype Planning Canvas", week: 18, group: "Additional" },
+  { key: "upload_19", label: "Demo Prototype Video", week: 19, group: "Additional" }
 ];
 
 let currentTimelineBatch = "24IPD"; // Default batch

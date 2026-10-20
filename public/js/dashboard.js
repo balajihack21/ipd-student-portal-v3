@@ -400,6 +400,7 @@ async function loadUploadHistory() {
         ${[3,4,5,6,7,8,9].includes(Number(upload.week_number)) ? `<a href="#" class="view-link text-emerald-600 hover:underline text-sm">View</a>` : ''}
       </div>
     </div>
+    ${Number(upload.week_number) === 19 && upload.file_url ? `<video class="upload-video-preview mt-3" controls preload="metadata" src="${upload.file_url}">Your browser does not support video playback.</video>` : ''}
     <div class="mt-2 ml-1 text-sm text-gray-700">
       <div><strong>Status:</strong>
         <span class="font-medium ${upload.status === 'REVIEWED'
@@ -766,6 +767,14 @@ function handleUpload(formId, fileId, progressId, statusId, weekNumber) {
 
     const file = document.getElementById(fileId).files[0];
     if (!file) return alert("Please select a file!");
+    if (Number(weekNumber) === 19) {
+      if (!file.name.toLowerCase().endsWith(".mp4") || file.type !== "video/mp4") {
+        return alert("Only MP4 video files are accepted.");
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        return alert("Demo videos must be 20 MB or smaller. Compress the video and try again.");
+      }
+    }
 
     const token = localStorage.getItem("token");
     const progressBar = document.getElementById(progressId);
@@ -778,7 +787,8 @@ function handleUpload(formId, fileId, progressId, statusId, weekNumber) {
       formData.append("file", file);
       formData.append("week_number", weekNumber);
 
-      await axios.post("/api/upload", formData, {
+      const uploadEndpoint = Number(weekNumber) === 19 ? "/api/upload-demo-video" : "/api/upload";
+      await axios.post(uploadEndpoint, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -821,6 +831,7 @@ handleUpload("week15Form", "week15File", "week15Progress", "week15Status", 15);
 handleUpload("week16Form", "week16File", "week16Progress", "week16Status", 16);
 handleUpload("BMCForm", "BMCFile", "BMCProgress", "BMCStatus", 17);
 handleUpload("PPCForm", "PPCFile", "PPCProgress", "PPCStatus", 18);
+handleUpload("demoVideoForm", "demoVideoFile", "demoVideoProgress", "demoVideoStatus", 19);
 
 // Category / semester-2 master uploads (governed by admin timeline)
 handleUpload("dbSchemaForm", "dbSchemaFile", "dbSchemaProgress", "dbSchemaStatus", 12);

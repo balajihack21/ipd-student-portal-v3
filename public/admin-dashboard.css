@@ -405,6 +405,16 @@ body.admin-body {
   font-size: 13.5px;
 }
 
+.upload-video-preview {
+  display: block;
+  width: min(100%, 720px);
+  max-height: 70vh;
+  aspect-ratio: 16 / 9;
+  margin-top: 10px;
+  background: #10131a;
+  border-radius: 8px;
+}
+
 .admin-content table.compact-team-table {
   table-layout: auto;
   min-width: 1180px;

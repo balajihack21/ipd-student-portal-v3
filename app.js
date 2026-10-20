@@ -36,6 +36,7 @@ app.use(
       scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
       connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      mediaSrc: ["'self'", "https://s3.us-east-005.backblazeb2.com"],
     },
   })
 );

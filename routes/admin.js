@@ -12,7 +12,8 @@ import ProblemStatement from '../models/Problem.js'
 import ValueProposition from '../models/Value.js'
 import dotenv from 'dotenv';
 import Sib from 'sib-api-v3-sdk';
-import {getSignedFileUrl}  from "../backblaze.js";
+import { getSignedFileUrl } from "../backblaze.js";
+import { deleteFromBackblaze } from "../middleware/upload.js";
 
 
 const router = express.Router();
@@ -419,6 +420,24 @@ router.get('/team-history', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/uploads/:uploadId/demo-video', async (req, res) => {
+  try {
+    const upload = await TeamUpload.findByPk(req.params.uploadId);
+    if (!upload) return res.status(404).json({ error: 'Upload not found' });
+    if (Number(upload.week_number) !== 19) {
+      return res.status(400).json({ error: 'Only demo prototype videos can be deleted here' });
+    }
+
+    if (upload.file_key) await deleteFromBackblaze(upload.file_key);
+    await upload.destroy();
+
+    res.json({ success: true, teamId: upload.user_id });
+  } catch (err) {
+    console.error('Error deleting demo video:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete demo video' });
   }
 });
 

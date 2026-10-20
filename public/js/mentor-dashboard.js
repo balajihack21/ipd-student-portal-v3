@@ -356,35 +356,6 @@ STAGES_CONFIG.filter(s => s.key.includes("workbook")).forEach(stageConfig => {
 });
 
 
-async function loadMentorDetails() {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await axios.get('/mentor/details', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    const mentor = res.data;
-    document.getElementById('mentorName').textContent = `${mentor.title}${mentor.name}`;
-    document.getElementById('mentorEmail').textContent = mentor.email;
-
-    if (mentor.is_coordinator) {
-      // Fetch batch timelines to gate sections
-      await checkTimelineAndToggleSections(token);
-    } else {
-      // Non-coordinators: hide all review/workbook sections
-      STAGES_CONFIG.forEach(stage => {
-        const section = document.getElementById(stage.sectionId);
-        if (section) section.classList.add("hidden");
-      });
-    }
-
-  } catch (err) {
-    console.error('Failed to load mentor details:', err);
-  }
-}
-
-
-
 // async function loadRubricsTeams() {
 //   try {
 //     const token = localStorage.getItem('token');
@@ -746,6 +717,7 @@ async function loadTeams(batch = "24ipd") {
               </p>
 
               ${viewLink}
+              ${Number(upload.week_number) === 19 && upload.file_url ? `<video class="upload-video-preview" controls preload="metadata" src="${upload.file_url}">Your browser does not support video playback.</video>` : ""}
 
               ${alreadyReviewed && stat === "REVIEWED"
               ? `

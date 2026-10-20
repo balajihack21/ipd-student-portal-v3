@@ -17,13 +17,14 @@ const UPLOAD_TITLES = {
   15: "User Flow Diagram",
   16: "Mock Up / Wireframe",
   17: "BMC Template",
-  18: "Prototype Planning Canvas"
+  18: "Prototype Planning Canvas",
+  19: "Demo Prototype Video"
 };
 
 const UPLOAD_SEMESTERS = [
   { key: "sem1", label: "Semester 1", weeks: [1, 2, 3, 4, 5] },
   { key: "sem2", label: "Semester 2", weeks: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-  { key: "other", label: "Additional Submissions", weeks: [17, 18] }
+  { key: "other", label: "Additional Submissions", weeks: [17, 18, 19] }
 ];
 
 function getUploadTitle(week) {
