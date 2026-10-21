@@ -885,6 +885,60 @@ body.portal-body {
   min-width: 90px;
 }
 
+.coordinator-upload-matrix {
+  min-width: 1500px;
+}
+
+.coordinator-upload-matrix thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.coordinator-upload-matrix th,
+.coordinator-upload-matrix td {
+  text-align: center;
+}
+
+.coordinator-upload-matrix th:nth-child(-n+6),
+.coordinator-upload-matrix td:nth-child(-n+6) {
+  text-align: left;
+}
+
+.coordinator-upload-matrix tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.coordinator-upload-matrix tbody tr:hover {
+  background: #f0fdf4;
+}
+
+.coordinator-upload-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.coordinator-upload-status.is-uploaded {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #bbf7d0;
+}
+
+.coordinator-upload-status.is-missing {
+  color: #b91c1c;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
 /* ---------- Modals ---------- */
 
 .portal-modal-panel {

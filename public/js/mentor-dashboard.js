@@ -75,9 +75,17 @@ async function loadMentorDetails() {
     document.getElementById('mentorEmail').textContent = mentor.email;
 
     if (mentor.is_coordinator) {
+      document.querySelector('.portal-topbar h1').textContent = 'Coordinator Dashboard';
+      document.querySelector('.portal-brand-sub').textContent = 'Coordinator';
+      document.getElementById('departmentUploadsNav').classList.remove('hidden');
+      document.getElementById('departmentUploadsSection').classList.remove('hidden');
+      await loadCoordinatorDepartmentUploads();
+
       // Fetch batch timelines to gate sections
       await checkTimelineAndToggleSections(token);
     } else {
+      document.getElementById('departmentUploadsNav').classList.add('hidden');
+      document.getElementById('departmentUploadsSection').classList.add('hidden');
       // Non-coordinators: hide all review/workbook sections
       STAGES_CONFIG.forEach(stage => {
         const section = document.getElementById(stage.sectionId);
@@ -89,6 +97,129 @@ async function loadMentorDetails() {
     console.error('Failed to load mentor details:', err);
   }
 }
+
+let coordinatorUploadData = null;
+
+function getCoordinatorUploadRows(data) {
+  const uploadNames = window.UPLOAD_TITLES || {};
+  const uploadWeeks = Object.keys(uploadNames).map(Number).sort((a, b) => a - b);
+
+  return data.teams.map((team) => {
+    const leader = team.Students?.[0];
+    const uploadedWeeks = new Set((team.TeamUploads || []).map((upload) => Number(upload.week_number)));
+    if (team.ProblemStatements?.length) uploadedWeeks.add(1);
+
+    const hasHardware = [...uploadedWeeks].some((week) => [7, 8, 9, 10, 11].includes(week));
+    const hasSoftware = [...uploadedWeeks].some((week) => [12, 13, 14, 15, 16].includes(week));
+    let category = '-';
+    if (hasHardware && hasSoftware) category = 'Hardware/Software';
+    else if (hasHardware) category = 'Hardware';
+    else if (hasSoftware) category = 'Software';
+
+    const row = {
+      'Team ID': team.UserId,
+      'Team Name': team.team_name,
+      'Mentor Name': team.mentor?.name || '—',
+      'Team Leader Name': leader?.student_name || '—',
+      Section: leader?.section || '—',
+      Category: category,
+    };
+    uploadWeeks.forEach((week) => {
+      row[uploadNames[week]] = uploadedWeeks.has(week) ? 'Uploaded' : 'No upload';
+    });
+    return row;
+  });
+}
+
+async function loadCoordinatorDepartmentUploads() {
+  const token = localStorage.getItem('token');
+  const batch = document.getElementById('coordinatorBatchSelect').value;
+  const status = document.getElementById('departmentUploadsStatus');
+  const tbody = document.getElementById('departmentUploadsTable');
+  const thead = document.getElementById('departmentUploadsHeader');
+  status.textContent = 'Loading department uploads…';
+
+  try {
+    const response = await axios.get(`/mentor/coordinator/team-uploads?batch=${encodeURIComponent(batch)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    coordinatorUploadData = response.data;
+    const rows = getCoordinatorUploadRows(response.data);
+    const columns = rows.length
+      ? Object.keys(rows[0])
+      : [
+          'Team ID',
+          'Team Name',
+          'Mentor Name',
+          'Team Leader Name',
+          'Section',
+          'Category',
+          ...Object.values(window.UPLOAD_TITLES || {}),
+        ];
+
+    thead.replaceChildren();
+    const headerRow = thead.insertRow();
+    columns.forEach((column) => {
+      const cell = document.createElement('th');
+      cell.textContent = column;
+      headerRow.append(cell);
+    });
+
+    tbody.replaceChildren();
+    if (!rows.length) {
+      const row = tbody.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = columns.length;
+      cell.textContent = `No ${response.data.department} teams found for ${batch.toUpperCase()}.`;
+    } else {
+      rows.forEach((item) => {
+        const row = tbody.insertRow();
+        columns.forEach((column) => {
+          const cell = row.insertCell();
+          if (item[column] === 'Uploaded' || item[column] === 'No upload') {
+            const badge = document.createElement('span');
+            badge.className = `coordinator-upload-status ${item[column] === 'Uploaded' ? 'is-uploaded' : 'is-missing'}`;
+            badge.textContent = item[column];
+            cell.append(badge);
+          } else {
+            cell.textContent = item[column];
+          }
+        });
+      });
+    }
+
+    const uploadNames = Object.values(window.UPLOAD_TITLES || {});
+    const uploadedCount = rows.reduce((count, row) =>
+      count + uploadNames.filter((name) => row[name] === 'Uploaded').length, 0);
+    status.textContent = `${response.data.department} · ${batch.toUpperCase()} · ${rows.length} teams · ${uploadedCount} uploads recorded`;
+  } catch (err) {
+    console.error('Failed to load coordinator department uploads:', err);
+    coordinatorUploadData = null;
+    thead.replaceChildren();
+    tbody.replaceChildren();
+    const row = tbody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 1;
+    cell.textContent = 'Unable to load department uploads.';
+    status.textContent = err.response?.data?.error || 'Unable to load department uploads.';
+  }
+}
+
+document.getElementById('exportDepartmentUploads')?.addEventListener('click', () => {
+  if (!coordinatorUploadData) {
+    alert('Department upload details are not loaded yet.');
+    return;
+  }
+
+  const exportRows = getCoordinatorUploadRows(coordinatorUploadData);
+
+  const worksheet = XLSX.utils.json_to_sheet(exportRows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Department Uploads');
+  XLSX.writeFile(workbook, `department_uploads_${coordinatorUploadData.batch}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+});
+
+document.getElementById('coordinatorBatchSelect')?.addEventListener('change', loadCoordinatorDepartmentUploads);
 
 async function checkTimelineAndToggleSections(token) {
   // Fetch timelines - /api/deadlines returns batch-specific timelines
@@ -1599,4 +1730,3 @@ Object.values(groupedByTeam).forEach((members) => {
     alert("Failed to export review scores");
   }
 }
-

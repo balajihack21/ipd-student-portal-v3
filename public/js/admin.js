@@ -831,18 +831,30 @@ async function toggleLock(teamId, lock) {
 
 // Bulk lock/unlock by batch
 async function bulkLockBatch(lock) {
+  if (currentBatch === "all") {
+    alert("Select a batch before locking or unlocking teams.");
+    return;
+  }
+
   try {
     const token = localStorage.getItem("token");
-    await axios.post(`/admin/teams/batch/${lock ? 'lock' : 'unlock'}`, {
+    const response = await axios.post(`/admin/teams/batch/${lock ? 'lock' : 'unlock'}`, {
       batch: currentBatch
     }, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    alert(`Batch ${currentBatch}: all teams ${lock ? 'locked' : 'unlocked'}`);
-    fetchAllTeamHistories();
+    const { matchedTeams, teamsInRequestedState } = response.data;
+    if (matchedTeams === 0) {
+      alert(`No teams found for batch ${currentBatch}.`);
+    } else if (teamsInRequestedState === matchedTeams) {
+      alert(`Batch ${currentBatch}: ${teamsInRequestedState} teams are ${lock ? 'locked' : 'unlocked'}.`);
+    } else {
+      alert(`Batch ${currentBatch}: ${teamsInRequestedState} of ${matchedTeams} teams are ${lock ? 'locked' : 'unlocked'}.`);
+    }
+    await fetchAllTeamHistories();
   } catch (err) {
     console.error("Batch toggle failed:", err);
-    alert(`Failed to ${lock ? 'lock' : 'unlock'} batch`);
+    alert(err.response?.data?.error || `Failed to ${lock ? 'lock' : 'unlock'} batch`);
   }
 }
 

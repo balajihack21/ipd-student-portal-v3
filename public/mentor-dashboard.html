@@ -9,7 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="/portal.css?v=20261020-demo-video" rel="stylesheet">
+  <link href="/portal.css?v=20261021-coordinator-category" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
@@ -46,6 +46,7 @@
       <div class="portal-nav" id="navMenu">
         <a href="#overviewSection" class="menu-item active"><span class="nav-icon">🏠</span> Overview</a>
         <a href="#assignedTeams" class="menu-item"><span class="nav-icon">👥</span> Assigned Teams</a>
+        <a href="#departmentUploadsSection" id="departmentUploadsNav" class="menu-item hidden"><span class="nav-icon">📂</span> Department Uploads</a>
         <a href="#sem1Review1Section" class="menu-item" data-watch="sem1Review1Section"><span class="nav-icon">📝</span> Sem 1 Review 1</a>
         <a href="#sem1Review2Section" class="menu-item" data-watch="sem1Review2Section"><span class="nav-icon">📝</span> Sem 1 Review 2</a>
         <a href="#sem1WorkbookSection" class="menu-item" data-watch="sem1WorkbookSection"><span class="nav-icon">📚</span> Sem 1 Workbook</a>
@@ -144,6 +145,36 @@
           <div id="teamList">
             <!-- JS appends team cards here -->
             <p class="portal-empty">Loading teams…</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Coordinator-only department upload overview -->
+      <section id="departmentUploadsSection" class="portal-section hidden">
+        <div class="portal-section-head">
+          <div>
+            <h2 class="portal-section-title">Department Team Uploads</h2>
+            <p class="portal-section-desc">Upload status for every canvas and submission in your department.</p>
+          </div>
+          <button id="exportDepartmentUploads" class="portal-btn portal-btn-primary">Export to Excel</button>
+        </div>
+
+        <div class="portal-card">
+          <div class="portal-field">
+            <label for="coordinatorBatchSelect" class="portal-label">Select batch</label>
+            <select id="coordinatorBatchSelect" class="portal-input">
+              <option value="24ipd">24IPD (24 Batch)</option>
+              <option value="25ipd" selected>25IPD (25 Batch)</option>
+            </select>
+          </div>
+          <p id="departmentUploadsStatus" class="portal-card-desc">Loading department uploads…</p>
+          <div class="portal-table-wrap mt-4">
+            <table class="portal-table coordinator-upload-matrix">
+              <thead id="departmentUploadsHeader"></thead>
+              <tbody id="departmentUploadsTable">
+                <tr><td>Loading department uploads…</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -528,7 +559,7 @@
 
   <script src="/js/upload-titles.js?v=20261020-demo-video"></script>
   <script src="/js/portal-shell.js"></script>
-  <script src="/js/mentor-dashboard.js?v=20261020-demo-video"></script>
+  <script src="/js/mentor-dashboard.js?v=20261021-coordinator-uploads-v6"></script>
 </body>
 
 </html>

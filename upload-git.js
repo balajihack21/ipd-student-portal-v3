@@ -284,22 +284,47 @@
 
 import 'dotenv/config';
 
-import sequelize from './models/index.js';
-import Student from './models/Student.js';
+// import sequelize from './models/index.js';
+// import Student from './models/Student.js';
 
-async function updateSchema() {
+// async function updateSchema() {
+//   try {
+//     await sequelize.authenticate();
+//     console.log('✓ Connected to MySQL');
+
+//     await Student.sync({ alter: true });
+
+//     console.log('✓ Student table schema updated successfully');
+//   } catch (error) {
+//     console.error('Schema update failed:', error);
+//   } finally {
+//     await sequelize.close();
+//   }
+// }
+
+// updateSchema();
+
+
+import 'dotenv/config';
+import sequelize from './models/index.js';
+import User from './models/User.js';
+
+async function unlockAllUsers() {
   try {
     await sequelize.authenticate();
     console.log('✓ Connected to MySQL');
 
-    await Student.sync({ alter: true });
+    const [rowsUpdated] = await User.update(
+      { isLocked: false },
+      { where: { isLocked: true } }
+    );
 
-    console.log('✓ Student table schema updated successfully');
+    console.log(`✓ Successfully unlocked users: ${rowsUpdated}`);
   } catch (error) {
-    console.error('Schema update failed:', error);
+    console.error('Error unlocking users:', error);
   } finally {
     await sequelize.close();
   }
 }
 
-updateSchema();
+unlockAllUsers();

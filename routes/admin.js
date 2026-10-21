@@ -717,17 +717,49 @@ router.post("/teams/:teamId/unlock", async (req, res) => {
 });
 
 // Batch lock all teams in a batch prefix (e.g., "24IPD" or "25IPD")
+async function updateBatchLockState(batch, isLocked) {
+  const normalizedBatch = String(batch || '').trim().toUpperCase();
+  if (!['24IPD', '25IPD'].includes(normalizedBatch)) {
+    const error = new Error("batch must be 24IPD or 25IPD");
+    error.status = 400;
+    throw error;
+  }
+
+  const teams = await User.findAll({
+    attributes: ['UserId'],
+    raw: true,
+  });
+  const teamIds = teams
+    .map(({ UserId }) => String(UserId))
+    .filter((userId) => userId.toUpperCase().startsWith(normalizedBatch));
+
+  if (teamIds.length) {
+    await User.update(
+      { isLocked },
+      { where: { UserId: { [Op.in]: teamIds } } }
+    );
+  }
+
+  const teamsInRequestedState = teamIds.length
+    ? await User.count({
+        where: {
+          UserId: { [Op.in]: teamIds },
+          isLocked,
+        },
+      })
+    : 0;
+
+  return { matchedTeams: teamIds.length, teamsInRequestedState };
+}
+
 router.post("/teams/batch/lock", async (req, res) => {
   try {
-    const { batch } = req.body;
-    if (!batch) return res.status(400).json({ error: "batch is required" });
-    const prefix = `${batch.toString().toUpperCase()}-`;
-    const [updated] = await User.update(
-      { isLocked: true },
-      { where: { UserId: { [Op.like]: `${prefix}%` } } }
-    );
-    res.json({ message: `Batch ${batch}: ${updated} teams locked` });
+    const result = await updateBatchLockState(req.body.batch, true);
+    res.json({ success: true, ...result });
   } catch (err) {
+    if (err.status === 400) {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("Error batch-locking teams:", err);
     res.status(500).json({ error: "Failed to batch-lock teams" });
   }
@@ -735,15 +767,12 @@ router.post("/teams/batch/lock", async (req, res) => {
 
 router.post("/teams/batch/unlock", async (req, res) => {
   try {
-    const { batch } = req.body;
-    if (!batch) return res.status(400).json({ error: "batch is required" });
-    const prefix = `${batch.toString().toUpperCase()}-`;
-    const [updated] = await User.update(
-      { isLocked: false },
-      { where: { UserId: { [Op.like]: `${prefix}%` } } }
-    );
-    res.json({ message: `Batch ${batch}: ${updated} teams unlocked` });
+    const result = await updateBatchLockState(req.body.batch, false);
+    res.json({ success: true, ...result });
   } catch (err) {
+    if (err.status === 400) {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("Error batch-unlocking teams:", err);
     res.status(500).json({ error: "Failed to batch-unlock teams" });
   }

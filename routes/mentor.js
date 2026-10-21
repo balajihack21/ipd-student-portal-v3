@@ -9,6 +9,7 @@ import UserRequirementCanvas from "../models/UserRequirementCanvas.js";
 import ProductDimensions from "../models/ProductDimensions.js";
 import PerformanceRequirement from "../models/PerformanceRequirement.js";
 import BillOfMaterial from "../models/BillOfMaterial.js";
+import ProblemStatement from "../models/Problem.js";
 import dotenv from 'dotenv';
 import Sib from 'sib-api-v3-sdk';
 import { getSignedFileUrl } from "../backblaze.js";
@@ -615,6 +616,61 @@ router.get("/my-teams", authenticate, async (req, res) => {
       error: "Server error fetching teams"
     });
 
+  }
+});
+
+router.get("/coordinator/team-uploads", authenticate, async (req, res) => {
+  try {
+    const mentor = await Mentor.findByPk(req.user.mentorId);
+    if (!mentor || !mentor.is_coordinator) {
+      return res.status(403).json({ error: "Only coordinators can view department uploads" });
+    }
+
+    const batch = String(req.query.batch || "").trim().toLowerCase();
+    if (!["24ipd", "25ipd"].includes(batch)) {
+      return res.status(400).json({ error: "batch must be 24ipd or 25ipd" });
+    }
+
+    const teams = await User.findAll({
+      attributes: ["UserId", "team_name"],
+      include: [
+        {
+          model: Student,
+          attributes: ["student_name", "register_no", "dept", "section"],
+          where: { dept: mentor.department, is_leader: true },
+          required: true,
+        },
+        {
+          model: TeamUpload,
+          attributes: ["week_number"],
+          required: false,
+        },
+        {
+          model: ProblemStatement,
+          attributes: ["id"],
+          required: false,
+        },
+        {
+          model: Mentor,
+          as: "mentor",
+          attributes: ["name"],
+          required: false,
+        },
+      ],
+    });
+
+    const departmentTeams = teams
+      .filter((team) => String(team.UserId).toLowerCase().startsWith(batch))
+      .map((team) => team.toJSON());
+
+    res.json({
+      department: mentor.department,
+      batch,
+      teams: departmentTeams,
+    });
+  } catch (err) {
+    console.error("Error fetching coordinator department uploads:", err);
+    res.status(500).json({ error: "Failed to fetch department uploads" });
   }
 });
 
