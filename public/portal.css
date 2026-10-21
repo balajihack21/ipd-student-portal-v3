@@ -927,7 +927,13 @@ body.portal-body {
   white-space: nowrap;
 }
 
-.coordinator-upload-status.is-uploaded {
+.coordinator-upload-status.is-submitted {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.coordinator-upload-status.is-reviewed {
   color: #166534;
   background: #dcfce7;
   border-color: #bbf7d0;

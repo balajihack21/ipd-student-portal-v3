@@ -642,7 +642,7 @@ router.get("/coordinator/team-uploads", authenticate, async (req, res) => {
         },
         {
           model: TeamUpload,
-          attributes: ["week_number"],
+          attributes: ["week_number", "status"],
           required: false,
         },
         {

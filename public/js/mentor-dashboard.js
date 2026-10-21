@@ -106,8 +106,14 @@ function getCoordinatorUploadRows(data) {
 
   return data.teams.map((team) => {
     const leader = team.Students?.[0];
-    const uploadedWeeks = new Set((team.TeamUploads || []).map((upload) => Number(upload.week_number)));
-    if (team.ProblemStatements?.length) uploadedWeeks.add(1);
+    const uploadStatuses = new Map((team.TeamUploads || []).map((upload) => [
+      Number(upload.week_number),
+      String(upload.status).toUpperCase() === 'REVIEWED' ? 'Reviewed' : 'Submitted',
+    ]));
+    if (team.ProblemStatements?.length && !uploadStatuses.has(1)) {
+      uploadStatuses.set(1, 'Submitted');
+    }
+    const uploadedWeeks = new Set(uploadStatuses.keys());
 
     const hasHardware = [...uploadedWeeks].some((week) => [7, 8, 9, 10, 11].includes(week));
     const hasSoftware = [...uploadedWeeks].some((week) => [12, 13, 14, 15, 16].includes(week));
@@ -125,7 +131,7 @@ function getCoordinatorUploadRows(data) {
       Category: category,
     };
     uploadWeeks.forEach((week) => {
-      row[uploadNames[week]] = uploadedWeeks.has(week) ? 'Uploaded' : 'No upload';
+      row[uploadNames[week]] = uploadStatuses.get(week) || 'No upload';
     });
     return row;
   });
@@ -176,9 +182,14 @@ async function loadCoordinatorDepartmentUploads() {
         const row = tbody.insertRow();
         columns.forEach((column) => {
           const cell = row.insertCell();
-          if (item[column] === 'Uploaded' || item[column] === 'No upload') {
+          if (['Submitted', 'Reviewed', 'No upload'].includes(item[column])) {
             const badge = document.createElement('span');
-            badge.className = `coordinator-upload-status ${item[column] === 'Uploaded' ? 'is-uploaded' : 'is-missing'}`;
+            const statusClass = item[column] === 'Reviewed'
+              ? 'is-reviewed'
+              : item[column] === 'Submitted'
+                ? 'is-submitted'
+                : 'is-missing';
+            badge.className = `coordinator-upload-status ${statusClass}`;
             badge.textContent = item[column];
             cell.append(badge);
           } else {
@@ -190,7 +201,7 @@ async function loadCoordinatorDepartmentUploads() {
 
     const uploadNames = Object.values(window.UPLOAD_TITLES || {});
     const uploadedCount = rows.reduce((count, row) =>
-      count + uploadNames.filter((name) => row[name] === 'Uploaded').length, 0);
+      count + uploadNames.filter((name) => row[name] === 'Submitted' || row[name] === 'Reviewed').length, 0);
     status.textContent = `${response.data.department} · ${batch.toUpperCase()} · ${rows.length} teams · ${uploadedCount} uploads recorded`;
   } catch (err) {
     console.error('Failed to load coordinator department uploads:', err);
