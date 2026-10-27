@@ -5,6 +5,7 @@ import Mentor from '../models/Mentor.js'
 import authenticate from '../middleware/authenticate.js';
 import Admin from '../models/Admin.js';
 import Sib from "sib-api-v3-sdk";
+import getAppUrl from '../config/appUrl.js';
 
 const router = express.Router();
 
@@ -118,7 +119,8 @@ router.post("/forgot-password", async (req, res) => {
     // check in all three roles
     let user =
       (await User.findOne({ where: { email } })) ||
-      (await Mentor.findOne({ where: { email } }));
+      (await Mentor.findOne({ where: { email } })) ||
+      (await Admin.findOne({ where: { email } }));
 
     if (!user) {
       return res.status(404).json({ message: "No account with this email" });
@@ -129,7 +131,9 @@ router.post("/forgot-password", async (req, res) => {
       expiresIn: "15m",
     });
 
-    const resetLink = `http://agni-ipd.onrender.com/reset-password.html?token=${token}`;
+    const resetUrl = new URL('/reset-password.html', getAppUrl());
+    resetUrl.searchParams.set('token', token);
+    const resetLink = resetUrl.toString();
 
     // Send email
     console.log(user.email)

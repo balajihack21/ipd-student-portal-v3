@@ -21,6 +21,7 @@ import BillOfMaterial from '../models/BillOfMaterial.js';
 import ProblemStatement from '../models/Problem.js'
 import authenticate from '../middleware/authenticate.js';
 import { supabase } from "../config/cloudinary.js";
+import getAppUrl from '../config/appUrl.js';
 import multer from 'multer';
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -407,7 +408,7 @@ router.post("/idea", authenticate, async (req, res) => {
         subject: `Team Upload Notification - Idea Generation Canvas`,
         htmlContent: `<h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
           <p>Your mentee has updated their submission for <strong>Idea Generation Canvas</strong>.</p>
-          <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+          <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
           <p>Team Name: <strong>${user.team_name}</strong></p>
           <p>Contact No: <strong>${user.mobile}</strong></p>
           <p>Best Regards,<br />IPD Team</p>`,
@@ -449,7 +450,7 @@ router.post("/idea", authenticate, async (req, res) => {
         subject: `Team Upload Notification - Idea Generation Canvas`,
         htmlContent: `<h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
           <p>Your mentee has uploaded a file for <strong>Idea Generation Canvas</strong>.</p>
-          <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+          <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
           <p>Team Name: <strong>${user.team_name}</strong></p>
           <p>Contact No: <strong>${user.mobile}</strong></p>
           <p>Best Regards,<br />IPD Team</p>`,
@@ -584,7 +585,7 @@ router.post("/swot", authenticate, async (req, res) => {
         subject: `Team Upload Notification - Swot Analysis`,
         htmlContent: `<h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
         <p>Your mentee has uploaded a file for <strong>Swot Analysis</strong>.</p>
-        <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+        <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
         <p>Team Name: <strong>${user.team_name}</strong></p>
         <p>Contact No: <strong>${user.mobile}</strong></p>
         <p>Best Regards,<br />IPD Team</p>`,
@@ -624,7 +625,7 @@ router.post("/swot", authenticate, async (req, res) => {
         subject: `Team Upload Notification - Swot Analysis`,
         htmlContent: `<h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
         <p>Your mentee has uploaded a file.</p>
-        <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+        <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
         <p>Team Name: <strong>${user.team_name}</strong></p>
         <p>Contact No: <strong>${user.mobile}</strong></p>
         <p>Best Regards,<br />IPD Team</p>`,
@@ -725,7 +726,7 @@ router.post('/value-proposition', authenticate, async (req, res) => {
       subject: `Team Upload Notification - Value Proposition Canvas`,
       htmlContent: `<h3>Hello ${mentor ? `${mentor.title || ""} ${mentor.name || ""}` : "Mentor"},</h3>
       <p>Your mentee has uploaded a file for <strong>Value Proposition</strong>.</p>
-      <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+      <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
       <p>Team Name: <strong>${user.team_name}</strong></p>
       <p>Contact No: <strong>${user.mobile}</strong></p>
       <p>Best Regards,<br />IPD Team</p>`
@@ -999,7 +1000,7 @@ router.post("/upload", authenticate, upload.single("file"), async (req, res) => 
     <p>You can view or download the file using the attachment or from the dashboard.</p>
 
     <p>
-      <a href="https://agni-ipd.onrender.com/" target="_blank">
+      <a href="${getAppUrl()}/" target="_blank">
         IPD Dashboard Link
       </a>
     </p>
@@ -1286,7 +1287,7 @@ router.post("/user-requirements", authenticate, async (req, res) => {
         subject: `Team Upload Notification - User Requirement Canvas`,
         htmlContent: `<h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
           <p>Your mentee has submitted <strong>User Requirement Canvas</strong>.</p>
-          <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+          <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
           <p>Team Name: <strong>${user.team_name}</strong></p>
           <p>Contact No: <strong>${user.mobile}</strong></p>
           <p>Best Regards,<br />IPD Team</p>`
@@ -1371,7 +1372,7 @@ router.post("/product-dimensions", authenticate, async (req, res) => {
         htmlContent: `
       <h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
       <p>Your mentee has submitted <strong>Product Dimensions</strong>.</p>
-      <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+      <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
       <p>Team Name: <strong>${user.team_name}</strong></p>
       <p>Contact No: <strong>${user.mobile}</strong></p>
       <p>Best Regards,<br />IPD Team</p>
@@ -1458,7 +1459,7 @@ router.post("/performance-requirements", authenticate, async (req, res) => {
         htmlContent: `
       <h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
       <p>Your mentee has submitted <strong>Product Dimensions</strong>.</p>
-      <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+      <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
       <p>Team Name: <strong>${user.team_name}</strong></p>
       <p>Contact No: <strong>${user.mobile}</strong></p>
       <p>Best Regards,<br />IPD Team</p>
@@ -1547,7 +1548,7 @@ router.post("/bill-of-materials", authenticate, async (req, res) => {
         htmlContent: `
       <h3>Hello ${mentor.title || ""} ${mentor.name},</h3>
       <p>Your mentee has submitted <strong>Bill Of Materials</strong>.</p>
-      <p><a href="https://agni-ipd.onrender.com/" target="_blank">IPD Dashboard Link</a></p>
+      <p><a href="${getAppUrl()}/" target="_blank">IPD Dashboard Link</a></p>
       <p>Team Name: <strong>${user.team_name}</strong></p>
       <p>Contact No: <strong>${user.mobile}</strong></p>
       <p>Best Regards,<br />IPD Team</p>
