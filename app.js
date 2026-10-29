@@ -4,6 +4,7 @@ import path from 'path';
 import morgan from 'morgan';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -46,7 +47,12 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(compression());
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1h',
+  etag: true,
+  lastModified: true,
+}));
 
 app.get('/favicon.ico', (req, res) => {
   res.type('png');

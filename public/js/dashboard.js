@@ -1210,8 +1210,6 @@ window.addEventListener('load', () => {
 
   // Load submitted data for display
   loadProblemStatement();
-  // loadTemplateFiles();
-  loadUploadHistory();
 });
 
 // Close SWOT Modal
@@ -1786,9 +1784,7 @@ async function loadUserRequirementCanvas() {
 
 
 // Load problem statement on page load
-window.addEventListener('load', loadProblemStatement);
 window.addEventListener('load', loadTemplateFiles);
-
 window.addEventListener('load', loadUserRequirementCanvas);
 
 window.addEventListener("load", loadDimensions);
