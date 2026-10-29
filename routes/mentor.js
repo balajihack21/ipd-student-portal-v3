@@ -884,7 +884,7 @@ router.post('/uploads/:uploadId/review', authenticate, async (req, res) => {
           ${review_comment}
         </blockquote>
         <p>You can also view the review from your dashboard:</p>
-        <p><a href="https://act-ipd.onrender.com/" target="_blank">Go to IPD Dashboard</a></p>
+        <p><a href="https://act-ipd.site/" target="_blank">Go to IPD Dashboard</a></p>
         <p>Team Name: <strong>${student.team_name}</strong></p>
         <p>Contact No: <strong>${student.mobile}</strong></p>
         <br />

@@ -29,6 +29,20 @@ import exportScoresRoutes from './routes/exportScores.js'
 
 const app = express();
 
+const redirectHosts = [
+  'act-ipd-5153.onrender.com',
+  'act-ipd.onrender.com',
+  'agni-ipd.onrender.com'
+];
+
+app.use((req, res, next) => {
+  if (redirectHosts.includes(req.hostname.toLowerCase())) {
+    return res.redirect(301, `https://act-ipd.site${req.originalUrl}`);
+  }
+
+  next();
+});
+
 // Helmet CSP setup
 app.use(
   helmet.contentSecurityPolicy({
