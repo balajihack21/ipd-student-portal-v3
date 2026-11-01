@@ -14,6 +14,8 @@ import dotenv from 'dotenv';
 import Sib from 'sib-api-v3-sdk';
 import { getSignedFileUrl } from "../backblaze.js";
 import { deleteFromBackblaze } from "../middleware/upload.js";
+import authenticate from '../middleware/authenticate.js';
+import Admin from '../models/Admin.js';
 
 
 const router = express.Router();
@@ -283,6 +285,7 @@ router.get('/all-review-scores', async (req, res) => {
         {
           model: Student,
           attributes: [
+            'id',
             'student_name',
             'section',
             'register_no',
@@ -308,6 +311,7 @@ router.get('/all-review-scores', async (req, res) => {
         const total = review1 + review2 + workbook;
 
         allScores.push({
+          studentId: student.id,
           teamId: team.UserId,
           team_name: team.team_name,
           name: student.student_name,
@@ -316,9 +320,9 @@ router.get('/all-review-scores', async (req, res) => {
           dept: student.dept,
           is_leader: Boolean(student.is_leader),
           role: student.is_leader ? 'Leader' : 'Student',
-          review1score: review1,
-          review2score: review2,
-          workbook_score: workbook,
+          review1score: student[selectedSemester.review1],
+          review2score: student[selectedSemester.review2],
+          workbook_score: student[selectedSemester.workbook],
           total_score: total,
         });
       });
@@ -334,6 +338,61 @@ router.get('/all-review-scores', async (req, res) => {
   } catch (err) {
     console.error('❌ Admin review scores fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch review scores' });
+  }
+});
+
+router.put('/students/:studentId/review-scores', async (req, res) => {
+  try {
+
+    const semesterMap = {
+      sem1: { review1: 'sem1_review1', review2: 'sem1_review2', workbook: 'sem1_workbook' },
+      sem2: { review1: 'sem2_review1', review2: 'sem2_review2', workbook: 'sem2_workbook' },
+      sem3: { review1: 'sem3_review1', review2: 'sem3_review2', workbook: 'sem3_workbook' },
+      sem4: { review1: 'sem4_review1', review2: 'sem4_review2', workbook: 'sem4_workbook' },
+    };
+    const semester = String(req.query.semester || '');
+    const selectedSemester = semesterMap[semester];
+    if (!selectedSemester) {
+      return res.status(400).json({ error: 'A valid semester is required' });
+    }
+
+    const scoreFields = [
+      { key: 'review1score', column: selectedSemester.review1, max: 30 },
+      { key: 'review2score', column: selectedSemester.review2, max: 30 },
+      { key: 'workbook_score', column: selectedSemester.workbook, max: 40 },
+    ];
+    for (const field of scoreFields) {
+      const score = req.body[field.key];
+      if (score !== null && (!Number.isInteger(score) || score < 0 || score > field.max)) {
+        return res.status(400).json({
+          error: `${field.key} must be a whole number between 0 and ${field.max}, or blank`,
+        });
+      }
+    }
+
+    const studentId = Number(req.params.studentId);
+    if (!Number.isSafeInteger(studentId) || studentId < 1) {
+      return res.status(400).json({ error: 'Invalid student ID' });
+    }
+
+    const student = await Student.findByPk(studentId);
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    await student.update(Object.fromEntries(
+      scoreFields.map(({ key, column }) => [column, req.body[key]])
+    ));
+
+    res.json({
+      message: 'Review scores updated successfully',
+      scores: Object.fromEntries(
+        scoreFields.map(({ key, column }) => [key, student[column]])
+      ),
+    });
+  } catch (err) {
+    console.error('Admin review score update error:', err);
+    res.status(500).json({ error: 'Failed to update review scores' });
   }
 });
 

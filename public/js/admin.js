@@ -134,6 +134,7 @@ let reviewFiltered = [];
 let reviewCurrentPage = 1;
 let reviewRowsPerPage = 10;
 let currentReviewSemester = "sem2";
+let editingReviewStudentId = null;
 
 function getReviewSemesterConfig(semester = currentReviewSemester) {
   const map = {
@@ -172,6 +173,7 @@ async function fetchReviewScores() {
     const semesterFilter = document.getElementById("reviewSemesterFilter");
     const selectedSemester = semesterFilter ? semesterFilter.value : currentReviewSemester;
     currentReviewSemester = selectedSemester;
+    editingReviewStudentId = null;
 
     const res = await axios.get("/admin/all-review-scores", {
       params: { semester: selectedSemester }
@@ -253,6 +255,10 @@ function renderReviewTable() {
 
       const reviewTotal = r1 + r2;
       const total = r.total_score ?? r1 + r2 + wb;
+      const isEditing = String(editingReviewStudentId) === String(r.studentId);
+      const scoreCell = (key, value, max) => isEditing
+        ? `<td class="p-2 text-center"><input type="number" min="0" max="${max}" step="1" value="${value ?? ''}" data-review-score="${key}" aria-label="${key}" class="w-16 border rounded px-1 py-1 text-center"></td>`
+        : `<td class="p-2 text-center">${value ?? 0}</td>`;
 
       return `
         <tr class="border-b hover:bg-gray-50">
@@ -263,11 +269,16 @@ function renderReviewTable() {
           <td class="p-2">${r.register_no || ""}</td>
           <td class="p-2">${r.dept || ""}</td>
           <td class="p-2 font-medium text-blue-700">${r.role || ""}</td>
-          <td class="p-2 text-center">${r1}</td>
-          <td class="p-2 text-center">${r2}</td>
+          ${scoreCell("review1score", r.review1score, 30)}
+          ${scoreCell("review2score", r.review2score, 30)}
           <td class="p-2 text-center font-semibold">${reviewTotal}</td>
-          <td class="p-2 text-center">${wb}</td>
+          ${scoreCell("workbook_score", r.workbook_score, 40)}
           <td class="p-2 font-bold text-green-700 text-center">${total}</td>
+          <td class="p-2 text-center whitespace-nowrap">
+            ${isEditing
+              ? `<button type="button" data-review-action="save" data-student-id="${r.studentId}" class="text-green-700 font-semibold mr-2">Save</button><button type="button" data-review-action="cancel" class="text-gray-600">Cancel</button>`
+              : `<button type="button" data-review-action="edit" data-student-id="${r.studentId}" class="text-blue-700 font-semibold">Edit</button>`}
+          </td>
         </tr>`;
     })
     .join("");
@@ -288,13 +299,80 @@ function renderReviewTable() {
           <th class="p-2">Review Total</th>
           <th class="p-2">${label} Workbook</th>
           <th class="p-2">Total</th>
+          <th class="p-2">Actions</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
   `;
 
+  container.onclick = handleReviewTableAction;
   renderReviewPagination();
+}
+
+async function handleReviewTableAction(event) {
+  const button = event.target.closest("[data-review-action]");
+  if (!button) return;
+
+  const action = button.dataset.reviewAction;
+  if (action === "cancel") {
+    editingReviewStudentId = null;
+    renderReviewTable();
+    return;
+  }
+
+  const studentId = button.dataset.studentId;
+  if (action === "edit") {
+    editingReviewStudentId = studentId;
+    renderReviewTable();
+    return;
+  }
+
+  const row = button.closest("tr");
+  const scoreInputs = [...row.querySelectorAll("[data-review-score]")];
+  const scores = Object.fromEntries(scoreInputs.map((input) => [
+    input.dataset.reviewScore,
+    input.value.trim() === "" ? null : Number(input.value),
+  ]));
+  if (scoreInputs.some((input) =>
+    input.value.trim() !== "" &&
+    (!Number.isInteger(Number(input.value)) ||
+      Number(input.value) < Number(input.min) ||
+      Number(input.value) > Number(input.max))
+  )) {
+    alert("Enter whole-number scores within the allowed ranges.");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Saving…";
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.put(
+      `/admin/students/${encodeURIComponent(studentId)}/review-scores`,
+      scores,
+      {
+        params: { semester: currentReviewSemester },
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const updatedScores = response.data.scores;
+    const updatedStudent = reviewData.find((student) => String(student.studentId) === String(studentId));
+    if (updatedStudent) {
+      Object.assign(updatedStudent, updatedScores);
+      updatedStudent.total_score =
+        (updatedScores.review1score ?? 0) +
+        (updatedScores.review2score ?? 0) +
+        (updatedScores.workbook_score ?? 0);
+    }
+    editingReviewStudentId = null;
+    applyReviewFilters();
+  } catch (error) {
+    console.error("Failed to update student review scores:", error);
+    alert(error.response?.data?.error || "Failed to save review scores.");
+    button.disabled = false;
+    button.textContent = "Save";
+  }
 }
 
 function renderReviewPagination() {
